@@ -1,0 +1,33 @@
+@import "tailwindcss";
+@import "tailwindcss";
+
+.bg-jib::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("/src/Image/Bg-Login.png");
+    background-size: cover;
+    background-position: center;
+    z-index: -1;
+}
+
+.input-style {
+    width: 189px;
+    height: 54px;
+    background: #FAFAFB;
+    border-radius: 16px;
+}
+
+.input-style1 {
+    width: 397.29px;
+    height: 54.06px;
+    background: #FAFAFB;
+    border-radius: 16px;
+}
+
+.custom-row {
+    margin-bottom: 10px;
+}
