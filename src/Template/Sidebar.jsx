@@ -190,9 +190,9 @@ const Sidebar = () => {
             }}
           >
             <img
-              src="/src/Image/Logocircle.png"
+              src="/src/Image/man-4123268_1280.jpg"
               alt="Logo"
-              style={{ width: 40, height: 40 }}
+              style={{ width: 40, height: 40, borderRadius: "50%" }} // Adjust to be circular
             />
             <Dropdown menu={{ items: item }}>
               <a onClick={(e) => e.preventDefault()}>

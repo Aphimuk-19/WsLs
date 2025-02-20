@@ -23,7 +23,7 @@ const Account = () => {
           <h1 className="text-black text-lg font-medium">Profile</h1>
           <div className="flex items-center space-x-4 ml-auto mr-auto">
             <img
-              className="w-[94px] h-[94px] rounded-full"
+              className="w-[75px] h-[75px] rounded-full"
               src="/src/Image/man-4123268_1280.jpg"
             />
             <p>John Doe</p>

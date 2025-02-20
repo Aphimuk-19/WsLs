@@ -10,8 +10,8 @@ const data = [
     type: "Notebook",
     name: "ASUS VIVOBOOK",
     image:
-      "https://www.jib.co.th/img_master/product/medium/20250208100449_74256_436_1.jpg?v=742561738984366",
-    location: "A1C3",
+      "https://www.jib.co.th/img_master/product/medium/20240409150821_66703_287_1.jpg?v=667031724752095",
+    location: "04-A",
     in: "01/01/68",
     end: "01/01/70",
     quantity: 15, // จำนวน
@@ -23,8 +23,8 @@ const data = [
     type: "Notebook",
     name: "ASUS VIVOBOOK",
     image:
-      "https://www.jib.co.th/img_master/product/medium/20250208100449_74256_436_1.jpg?v=742561738984366",
-    location: "A1C3",
+      "https://www.jib.co.th/img_master/product/medium/20240409150821_66703_287_1.jpg?v=667031724752095",
+    location: "04-A",
     in: "01/01/68",
     end: "01/01/70",
     quantity: 5, // จำนวน
@@ -36,7 +36,7 @@ const data = [
     type: "Notebook",
     name: "ASUS VIVOBOOK",
     image:
-      "https://www.jib.co.th/img_master/product/medium/20250208100449_74256_436_1.jpg?v=742561738984366",
+      "https://www.jib.co.th/img_master/product/medium/20240409150821_66703_287_1.jpg?v=667031724752095",
     location: "A1C3",
     in: "01/01/68",
     end: "01/01/70",
