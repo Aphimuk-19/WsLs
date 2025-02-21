@@ -66,10 +66,6 @@ const ManageUsers = () => {
     }));
   };
 
-  const handleDelete = (key) => {
-    const filtered = filteredData.filter((item) => item.key !== key);
-    setFilteredData(filtered);
-  };
 
   const handleTypeChange = (key, value) => {
     setFilteredData((prevData) =>

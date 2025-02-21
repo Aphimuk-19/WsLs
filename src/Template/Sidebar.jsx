@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Outlet, useNavigate } from 'react-router-dom'; // Import useNavigate
 import { Dropdown, Space, Badge, Menu } from "antd";
+import { Link } from 'react-router-dom';
 import {
   DownOutlined,
   BellOutlined,
@@ -13,6 +14,7 @@ import {
   TeamOutlined,
 } from "@ant-design/icons";
 import { Layout } from "antd";
+import { SpaceContext } from "antd/es/space";
 
 const { Header, Sider } = Layout;
 
@@ -27,6 +29,7 @@ const Sidebar = () => {
   
   const [currentPage, setCurrentPage] = useState("Dashboard"); // Track the current page
   const navigate = useNavigate(); // useNavigate hook to perform navigation
+  
 
   // Handle the menu click event and update the header text and navigate
   const handleMenuClick = ({ key }) => {
@@ -83,14 +86,14 @@ const Sidebar = () => {
     },
     {
       key: "2",
-      label: "Profile",
+      label: (
+        <div onClick={handleMenuClick} style={{ cursor: "pointer" }}>
+        Account
+      </div>
+      ),
     },
     {
       key: "3",
-      label: "Billing",
-    },
-    {
-      key: "4",
       label: "Settings",
       icon: <SettingOutlined />,
     },

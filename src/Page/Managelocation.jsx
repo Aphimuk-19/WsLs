@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
+import HeaderManageLocation from "../Custom/HeaderManageLocation";
 
 const Managelocation = () => {
+  // State variables
   const [columns, setColumns] = useState(["A", "B", "C", "D", "E", "F", "G"]);
   const [rows, setRows] = useState(["04", "03", "02", "01"]);
   const [cellCount, setCellCount] = useState(1);
@@ -12,6 +14,7 @@ const Managelocation = () => {
 
   const tableRef = useRef(null);
 
+  // Handle column addition
   const handleAddColumn = () => {
     if (capacity < 1 || capacity > 10) {
       alert("กรุณากำหนดขนาด Capacity ระหว่าง 1 ถึง 10");
@@ -46,6 +49,7 @@ const Managelocation = () => {
     }));
   };
 
+  // Handle cell click
   const handleCellClick = (row, col) => {
     const cellId = `${row}-${col}`;
 
@@ -65,6 +69,7 @@ const Managelocation = () => {
     }
   };
 
+  // Add cell to empty slot
   const handleAddCellToEmptySlot = () => {
     const [row, col] = selectedCell.split("-");
     setNewCells((prevCells) => ({
@@ -77,6 +82,7 @@ const Managelocation = () => {
     setSelectedCell(null);
   };
 
+  // Handle cell status change
   const handleCellStatusChange = (cellId, status) => {
     setCellStatus((prevStatus) => ({
       ...prevStatus,
@@ -85,6 +91,7 @@ const Managelocation = () => {
     setSelectedCell(null);
   };
 
+  // Handle click outside to close selected cell popup
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (tableRef.current && !tableRef.current.contains(event.target)) {
@@ -100,34 +107,11 @@ const Managelocation = () => {
 
   return (
     <div>
-      <div className="flex space-x-7 items-center justify-center mt-[40px]">
-        <div className="w-[268px] h-[116px] bg-white rounded-[10px]">
-          <div className="w-[60px] h-[60px] bg-[#5b92ff] opacity-10 rounded-full">
-
-          </div>
-        </div>
-        <div className="w-[268px] h-[116px] bg-white rounded-[10px]">
-          <div className="w-[60px] h-[60px] bg-[#0a8f08] opacity-10 rounded-full">
-
-          </div>
-        </div>
-        <div className="w-[268px] h-[116px] bg-white rounded-[10px]">
-          <div className="w-[60px] h-[60px] bg-[#f2383a] opacity-10 rounded-full">
-
-          </div>
-        </div>
-        <div className="w-[268px] h-[116px] bg-white rounded-[10px]">
-          <div className="w-[60px] h-[60px] bg-[#121212    ] opacity-10 rounded-full">
-
-          </div>
-        </div>
-        <div className="w-[268px] h-[116px] bg-white rounded-[10px]">
-          <div className="w-[60px] h-[60px] bg-[#5b92ff] opacity-10 rounded-full">
-            
-          </div>
-        </div>
+      <div>
+        <HeaderManageLocation />
       </div>
-      <div className="p-4 max-w-6xl mx-auto w-full mt-[40px] ">
+      {/* Cell Configuration Section */}
+      <div className="p-4 max-w-6xl mx-auto w-full mt-[40px]">
         <div className="flex flex-col">
           <div className="flex justify-end mb-4 space-x-4">
             <label className="text-sm mr-2"></label>
@@ -158,6 +142,7 @@ const Managelocation = () => {
             </button>
           </div>
 
+          {/* Table with Cells */}
           <div className="flex overflow-x-auto">
             <div className="flex flex-col justify-between mr-4 pt-1">
               {rows.map((row) => (
@@ -171,6 +156,7 @@ const Managelocation = () => {
             </div>
 
             <div className="flex-1 flex flex-col" ref={tableRef}>
+              {/* Grid Display */}
               <div
                 className="grid gap-2 border border-gray-200 rounded-md bg-white p-2"
                 style={{
@@ -194,7 +180,7 @@ const Managelocation = () => {
                           className={`h-16 w-36 ${
                             isCellAvailable
                               ? isDisabled
-                                ? "bg-gray-300"
+                                ? "bg-[#121212]/75 text-white"
                                 : "bg-green-500"
                               : "bg-gray-50"
                           } border border-gray-200 rounded-sm hover:bg-gray-100 relative`}
@@ -203,6 +189,7 @@ const Managelocation = () => {
                           <div className="flex items-center justify-center">
                             {row}-{col}
                           </div>
+                          {/* Cell Popup for Capacity */}
                           {isCellAvailable &&
                             !isDisabled &&
                             selectedCell === cellId && (
@@ -227,6 +214,7 @@ const Managelocation = () => {
                               Capacity: {cellCapacity}
                             </div>
                           )}
+                          {/* Add Capacity Popup for Empty Slot */}
                           {!isCellAvailable && selectedCell === cellId && (
                             <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white opacity-90 z-10">
                               <div className="flex flex-col items-center">
@@ -259,6 +247,7 @@ const Managelocation = () => {
                 ))}
               </div>
 
+              {/* Column Headers */}
               <div className="flex mt-2 px-2">
                 {columns.map((col) => (
                   <div
@@ -269,6 +258,21 @@ const Managelocation = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+           {/* Status Legend */}
+           <div className="flex items-center justify-start mt-10 space-x-20 ml-[37px]">
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-[#0A8F08] border border-gray-200 rounded-full mr-2 "></div>
+              <span className="text-sm">พื้นที่ว่าง</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-[#F2383A] border border-gray-200 rounded-full mr-2"></div>
+              <span className="text-sm">พื้นที่ไม่ว่าง</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-[#121212]/75 text-{gray-600} border border-gray-200 rounded-full mr-2"></div>
+              <span className="text-sm">ปิดการใช้งาน</span>
             </div>
           </div>
         </div>

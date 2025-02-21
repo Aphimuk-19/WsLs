@@ -2,6 +2,7 @@ import React from "react";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { Input } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   return (
@@ -45,9 +46,9 @@ const Login = () => {
 
           {/* Links for registration and forgot password */}
           <div className="flex items-center justify-center gap-1">
-            <a className="text-[#1565f9]" href="#">
+            <Link to="/Register" className="text-[#1565f9]">
               ลงทะเบียน
-            </a>
+            </Link>
             <p>หรือ</p>
             <a className="text-[#1565f9]" href="#">
               ลืมรหัสผ่าน?
