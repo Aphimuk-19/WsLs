@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Input, Select } from "antd";
+import { useNavigate } from "react-router-dom"; // ใช้ useNavigate แทน useHistory
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +14,10 @@ const Register = () => {
     confirmPassword: "",
   });
 
+  const [error, setError] = useState("");
+  const navigate = useNavigate(); // ใช้ useNavigate
+
+  // ฟังก์ชันที่ใช้จัดการการเปลี่ยนแปลงของ input
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -21,6 +26,7 @@ const Register = () => {
     }));
   };
 
+  // ฟังก์ชันที่ใช้จัดการการเปลี่ยนแปลงของ Select (Department)
   const handleSelectChange = (value) => {
     setFormData((prevData) => ({
       ...prevData,
@@ -28,30 +34,63 @@ const Register = () => {
     }));
   };
 
-  const handleSubmit = () => {
-    // ตรวจสอบค่าที่กรอกในฟอร์มเมื่อกดปุ่ม Sign Up
-    console.log("Form Data Submitted:", formData);
-    
-    // คุณสามารถทำการตรวจสอบว่า `password` กับ `confirmPassword` ตรงกันหรือไม่
+  // ฟังก์ชันสำหรับการสมัครสมาชิก
+  const handleSubmit = async () => {
     if (formData.password !== formData.confirmPassword) {
-      console.log("Passwords do not match.");
-    } else {
-      console.log("Passwords match!");
+      setError("Passwords do not match.");
+      return;
     }
-    
-    // ต่อไปคุณสามารถทำการส่งข้อมูลไปยังเซิร์ฟเวอร์
-    // เช่น เรียก API ที่นี่
+
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError("Please fill all required fields.");
+      return;
+    }
+
+    setError(""); // เคลียร์ข้อผิดพลาดก่อนที่จะส่งข้อมูล
+
+    try {
+      // ส่งข้อมูลไปยัง API
+      const response = await fetch("http://172.18.43.37:3000/api/Register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData), // ส่งข้อมูล formData
+      });
+
+      // ตรวจสอบสถานะของการตอบกลับ
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+      console.log("Success:", data);
+      
+      // เปลี่ยนเส้นทางไปยังหน้า Login หลังจากสมัครเสร็จ
+      navigate("/Login"); // ใช้ navigate 
+    } catch (error) {
+      setError("Registration failed. Please try again.");
+      console.error("Error:", error);
+    }
+  };
+
+  // ฟังก์ชันที่ใช้ตรวจสอบความถูกต้องของฟอร์ม
+  const isFormValid = () => {
+    return (
+      formData.firstName &&
+      formData.lastName &&
+      formData.email &&
+      formData.password &&
+      formData.password === formData.confirmPassword
+    );
   };
 
   return (
     <div className="h-screen flex justify-center items-center bg-cover bg-center bg-jib">
       <div className="w-[1023px] h-[631px] bg-white/60 rounded-[32px] shadow-[7px_5px_10px_0px_rgba(0,0,0,0.60)] flex">
-        {/* ด้านซ้าย */}
         <div className="w-1/2 h-full flex justify-center items-center bg-[#252265] rounded-tl-[32px] rounded-bl-[32px]">
-          <img src="/src/Image/Logo.webp" />
+          <img src="/src/Image/Logo.webp" alt="Logo" />
         </div>
-
-        {/* ด้านขวา */}
         <div className="w-1/2 h-full">
           <div className="flex flex-col justify-start items-center">
             <p className="text-black text-[37.45px] font-bold uppercase">Register</p>
@@ -59,6 +98,7 @@ const Register = () => {
               Warehouse Support & Location System
             </p>
           </div>
+          {error && <p className="text-red-500 text-sm">{error}</p>} {/* แสดงข้อความข้อผิดพลาด */}
           <div className="flex items-center justify-center gap-4 mb-3 mt-5">
             <Input
               name="firstName"
@@ -130,6 +170,7 @@ const Register = () => {
             <button
               className="w-[158.38px] h-[54px] bg-[#252265] rounded-[18.72px] text-white hover:bg-[#ffffff] hover:text-[#252265]"
               onClick={handleSubmit}
+              disabled={!isFormValid()} // ปิดปุ่มเมื่อฟอร์มไม่ถูกต้อง
             >
               Sign Up
             </button>

@@ -1,97 +1,30 @@
-import React, { useState, useRef, useEffect } from "react";
+// src/Page/Managelocation.jsx
+import React, { useContext, useRef, useEffect } from "react";
 import HeaderManageLocation from "../Custom/HeaderManageLocation";
+import { LocationContext } from "../Context/LocationContext";
 
 const Managelocation = () => {
-  // State variables
-  const [columns, setColumns] = useState(["A", "B", "C", "D", "E", "F", "G"]);
-  const [rows, setRows] = useState(["04", "03", "02", "01"]);
-  const [cellCount, setCellCount] = useState(1);
-  const [newCells, setNewCells] = useState({});
-  const [selectedCell, setSelectedCell] = useState(null);
-  const [cellStatus, setCellStatus] = useState({});
-  const [capacity, setCapacity] = useState(1); // Capacity state
-  const [popupCapacity, setPopupCapacity] = useState(1); // Popup capacity state
+  const {
+    columns,
+    rows,
+    newCells,
+    cellStatus,
+    selectedCell,
+    setSelectedCell,
+    capacity,
+    setCapacity,
+    popupCapacity,
+    setPopupCapacity,
+    cellCount,
+    setCellCount,
+    handleAddColumn,
+    handleCellClick,
+    handleAddCellToEmptySlot,
+    handleCellStatusChange,
+  } = useContext(LocationContext);
 
   const tableRef = useRef(null);
 
-  // Handle column addition
-  const handleAddColumn = () => {
-    if (capacity < 1 || capacity > 10) {
-      alert("กรุณากำหนดขนาด Capacity ระหว่าง 1 ถึง 10");
-      return;
-    }
-
-    const newColumn = String.fromCharCode(
-      columns[columns.length - 1].charCodeAt(0) + 1
-    );
-    setColumns([...columns, newColumn]);
-
-    const rowsToAdd = rows.slice(0, 4); // Adjust this as needed for more rows
-
-    const availableRows = rowsToAdd
-      .map((row, index) => {
-        if (index >= 4 - cellCount) {
-          return {
-            row,
-            column: newColumn,
-            id: `${row}-${newColumn}`,
-            capacity,
-          };
-        } else {
-          return null;
-        }
-      })
-      .filter((cell) => cell !== null);
-
-    setNewCells((prevCells) => ({
-      ...prevCells,
-      [newColumn]: availableRows,
-    }));
-  };
-
-  // Handle cell click
-  const handleCellClick = (row, col) => {
-    const cellId = `${row}-${col}`;
-
-    if (cellStatus[cellId] === "disabled") {
-      setCellStatus((prevStatus) => ({
-        ...prevStatus,
-        [cellId]: "enabled",
-      }));
-      return;
-    }
-
-    if (!newCells[col]?.some((cell) => cell.row === row)) {
-      setSelectedCell(cellId);
-      setPopupCapacity(1); // Reset popup capacity
-    } else {
-      setSelectedCell(cellId);
-    }
-  };
-
-  // Add cell to empty slot
-  const handleAddCellToEmptySlot = () => {
-    const [row, col] = selectedCell.split("-");
-    setNewCells((prevCells) => ({
-      ...prevCells,
-      [col]: [
-        ...(prevCells[col] || []),
-        { row, column: col, id: selectedCell, capacity: popupCapacity },
-      ],
-    }));
-    setSelectedCell(null);
-  };
-
-  // Handle cell status change
-  const handleCellStatusChange = (cellId, status) => {
-    setCellStatus((prevStatus) => ({
-      ...prevStatus,
-      [cellId]: status,
-    }));
-    setSelectedCell(null);
-  };
-
-  // Handle click outside to close selected cell popup
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (tableRef.current && !tableRef.current.contains(event.target)) {
@@ -103,15 +36,12 @@ const Managelocation = () => {
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
-  }, []);
+  }, [setSelectedCell]);
 
   return (
     <div>
-      <div>
-        <HeaderManageLocation />
-      </div>
-      {/* Cell Configuration Section */}
-      <div className="p-4 max-w-6xl mx-auto w-full mt-[40px]">
+      <HeaderManageLocation />
+      <div className="p-4 max-w-6xl mx-auto w-full mt-[50px]">
         <div className="flex flex-col">
           <div className="flex justify-end mb-4 space-x-4">
             <label className="text-sm mr-2"></label>
@@ -142,7 +72,6 @@ const Managelocation = () => {
             </button>
           </div>
 
-          {/* Table with Cells */}
           <div className="flex overflow-x-auto">
             <div className="flex flex-col justify-between mr-4 pt-1">
               {rows.map((row) => (
@@ -156,7 +85,6 @@ const Managelocation = () => {
             </div>
 
             <div className="flex-1 flex flex-col" ref={tableRef}>
-              {/* Grid Display */}
               <div
                 className="grid gap-2 border border-gray-200 rounded-md bg-white p-2"
                 style={{
@@ -172,8 +100,7 @@ const Managelocation = () => {
                       const cellId = `${row}-${col}`;
                       const isDisabled = cellStatus[cellId] === "disabled";
                       const cellCapacity =
-                        newCells[col]?.find((cell) => cell.row === row)
-                          ?.capacity || 0;
+                        newCells[col]?.find((cell) => cell.row === row)?.capacity || 0;
                       return (
                         <div
                           key={cellId}
@@ -189,32 +116,25 @@ const Managelocation = () => {
                           <div className="flex items-center justify-center">
                             {row}-{col}
                           </div>
-                          {/* Cell Popup for Capacity */}
-                          {isCellAvailable &&
-                            !isDisabled &&
-                            selectedCell === cellId && (
-                              <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white opacity-90 z-10">
-                                <select
-                                  onChange={(e) =>
-                                    handleCellStatusChange(
-                                      cellId,
-                                      e.target.value
-                                    )
-                                  }
-                                  className="p-2 border rounded"
-                                  defaultValue=""
-                                >
-                                  <option value="">เลือกสถานะ</option>
-                                  <option value="disabled">ปิดการใช้งาน</option>
-                                </select>
-                              </div>
-                            )}
+                          {isCellAvailable && !isDisabled && selectedCell === cellId && (
+                            <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white opacity-90 z-10">
+                              <select
+                                onChange={(e) =>
+                                  handleCellStatusChange(cellId, e.target.value)
+                                }
+                                className="p-2 border rounded"
+                                defaultValue=""
+                              >
+                                <option value="">เลือกสถานะ</option>
+                                <option value="disabled">ปิดการใช้งาน</option>
+                              </select>
+                            </div>
+                          )}
                           {isCellAvailable && (
                             <div className="absolute bottom-0 left-0 w-full text-center text-xs">
                               Capacity: {cellCapacity}
                             </div>
                           )}
-                          {/* Add Capacity Popup for Empty Slot */}
                           {!isCellAvailable && selectedCell === cellId && (
                             <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white opacity-90 z-10">
                               <div className="flex flex-col items-center">
@@ -247,7 +167,6 @@ const Managelocation = () => {
                 ))}
               </div>
 
-              {/* Column Headers */}
               <div className="flex mt-2 px-2">
                 {columns.map((col) => (
                   <div
@@ -260,10 +179,10 @@ const Managelocation = () => {
               </div>
             </div>
           </div>
-           {/* Status Legend */}
-           <div className="flex items-center justify-start mt-10 space-x-20 ml-[37px]">
+
+          <div className="flex items-center justify-start mt-10 space-x-20 ml-[37px]">
             <div className="flex items-center">
-              <div className="w-4 h-4 bg-[#0A8F08] border border-gray-200 rounded-full mr-2 "></div>
+              <div className="w-4 h-4 bg-[#0A8F08] border border-gray-200 rounded-full mr-2"></div>
               <span className="text-sm">พื้นที่ว่าง</span>
             </div>
             <div className="flex items-center">
@@ -271,7 +190,7 @@ const Managelocation = () => {
               <span className="text-sm">พื้นที่ไม่ว่าง</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 bg-[#121212]/75 text-{gray-600} border border-gray-200 rounded-full mr-2"></div>
+              <div className="w-4 h-4 bg-[#121212]/75 border border-gray-200 rounded-full mr-2"></div>
               <span className="text-sm">ปิดการใช้งาน</span>
             </div>
           </div>

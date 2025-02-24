@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { Outlet, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Dropdown, Space, Badge, Menu } from "antd";
-import { Link } from 'react-router-dom';
 import {
   DownOutlined,
   BellOutlined,
@@ -12,26 +11,23 @@ import {
   DatabaseOutlined,
   UserOutlined,
   TeamOutlined,
+  LogoutOutlined
 } from "@ant-design/icons";
 import { Layout } from "antd";
-import { SpaceContext } from "antd/es/space";
 
 const { Header, Sider } = Layout;
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const [headerText, setHeaderText] = useState("Dashboard"); // Header text state
+  const [headerText, setHeaderText] = useState("Dashboard");
   const [notifications] = useState([
     { key: "1", message: "New user registered" },
     { key: "2", message: "Product update available" },
     { key: "3", message: "New comment on your post" },
   ]);
-  
-  const [currentPage, setCurrentPage] = useState("Dashboard"); // Track the current page
-  const navigate = useNavigate(); // useNavigate hook to perform navigation
-  
+  const [currentPage, setCurrentPage] = useState("Dashboard");
+  const navigate = useNavigate();
 
-  // Handle the menu click event and update the header text and navigate
   const handleMenuClick = ({ key }) => {
     const menuMap = {
       1: "Dashboard",
@@ -41,12 +37,11 @@ const Sidebar = () => {
       5: "ManageUsers",
       6: "Account",
     };
-    const selectedPage = menuMap[key] || "Dashboard"; // Default to Dashboard if key not found
+    const selectedPage = menuMap[key] || "Dashboard";
     setHeaderText(selectedPage);
-    setCurrentPage(selectedPage); // Update the current page state
+    setCurrentPage(selectedPage);
   };
 
-  // Effectively trigger navigation when currentPage is updated
   React.useEffect(() => {
     if (currentPage === "Dashboard") navigate("/Dashboard");
     if (currentPage === "Product") navigate("/Product");
@@ -54,7 +49,7 @@ const Sidebar = () => {
     if (currentPage === "Managelocation") navigate("/Managelocation");
     if (currentPage === "ManageUsers") navigate("/ManageUsers");
     if (currentPage === "Account") navigate("/Account");
-  }, [currentPage, navigate]); // Re-run navigation when currentPage changes
+  }, [currentPage, navigate]);
 
   const items = [
     !collapsed && {
@@ -75,6 +70,7 @@ const Sidebar = () => {
     { key: "6", label: "Accounts", icon: <UserOutlined /> },
   ];
 
+  // Updated user dropdown menu items
   const item = [
     {
       key: "1",
@@ -86,20 +82,23 @@ const Sidebar = () => {
     },
     {
       key: "2",
-      label: (
-        <div onClick={handleMenuClick} style={{ cursor: "pointer" }}>
-        Account
-      </div>
-      ),
+      label: "Account",
+      onClick: () => {
+        setHeaderText("Account");
+        setCurrentPage("Account"); 
+      },
     },
+   
     {
       key: "3",
-      label: "Settings",
-      icon: <SettingOutlined />,
+      label: "Logout",
+      icon: <LogoutOutlined />,
+      onClick: () => {
+        navigate("/Login"); // นำทางไปยังหน้า Login
+      }
     },
   ];
 
-  // Notification menu - you can dynamically render these messages
   const notificationMenu = (
     <Menu>
       {notifications.length === 0 ? (
@@ -195,25 +194,18 @@ const Sidebar = () => {
             <img
               src="/src/Image/man-4123268_1280.jpg"
               alt="Logo"
-              style={{ width: 40, height: 40, borderRadius: "50%" }} // Adjust to be circular
+              style={{ width: 40, height: 40, borderRadius: "50%" }}
             />
             <Dropdown menu={{ items: item }}>
               <a onClick={(e) => e.preventDefault()}>
                 <Space className="text-[#1f384c] text-[16px] font-normal hover:text-blue-500">
                   b.fernandes
-                  <DownOutlined
-                    className="ml-2"
-                    style={{ fontSize: "10px" }}
-                  />
+                  <DownOutlined className="ml-2" style={{ fontSize: "10px" }} />
                 </Space>
               </a>
             </Dropdown>
 
-            {/* Notification Dropdown */}
-            <Dropdown
-              overlay={notificationMenu} // Use overlay prop for menu
-              trigger={['click']} // Trigger on click
-            >
+            <Dropdown overlay={notificationMenu} trigger={['click']}>
               <Badge count={notifications.length} offset={[10, 0]}>
                 <BellOutlined
                   style={{
