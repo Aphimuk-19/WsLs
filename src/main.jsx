@@ -15,6 +15,9 @@ import ProductLocation from "./Page/ProductLocation";
 import ManageUsers from "./Page/ManageUsers";
 import Account from "./Page/Account";
 import { LocationProvider } from "./Context/LocationContext";
+import PasswordResetLink from "./Page/PasswordResetLink";
+import ResetPasswordForm from "./Page/ResetPasswordForm";
+import EditProfilePage from "./Page/EditProfilePage";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -24,6 +27,10 @@ createRoot(document.getElementById("root")).render(
           {/* Default route */}
           <Route path="/" element={<Login />} />
           <Route path="/Login" element={<Login />} />
+          <Route path="/PasswordResetLink" element={<PasswordResetLink />} />
+          <Route path="/PasswordResetLink" element={<PasswordResetLink />} />
+          <Route path="/ResetPasswordForm" element={<ResetPasswordForm />} />
+          <Route path="/EditProfilePage" element={<EditProfilePage />} />
           <Route path="/Register" element={<Register />} />
           <Route element={<Sidebarlayout />}>
             <Route path="/Product" element={<Product />} />

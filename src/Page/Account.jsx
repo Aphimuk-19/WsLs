@@ -1,4 +1,5 @@
 import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const Account = () => {
   return (
@@ -29,7 +30,9 @@ const Account = () => {
             <p>John Doe</p>
           </div>
           <div>
-            <p className="text-blue-500 cursor-pointer ml-auto">Edit Profile</p>
+          <Link to="/EditProfilePage" className="text-[#1565f9]">
+              Edit Profile
+            </Link>
           </div>
         </div>
 

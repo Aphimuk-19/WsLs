@@ -2,6 +2,22 @@
 import React, { useContext, useRef, useEffect } from "react";
 import { LocationContext } from "../Context/LocationContext";
 
+const data = [
+  {
+    key: "1",
+    no: "1",
+    id: "#876364",
+    type: "Notebook",
+    name: "ASUS VIVOBOOK",
+    image:
+      "https://www.jib.co.th/img_master/product/medium/20240409150821_66703_287_1.jpg?v=667031724752095",
+    location: "04-A",
+    in: "01/01/68",
+    end: "01/01/70",
+    quantity: 20, // จำนวน
+  },
+];
+
 const ProductLocation = () => {
   const {
     columns,
@@ -130,11 +146,65 @@ const ProductLocation = () => {
           <span className="text-sm">ปิดการใช้งาน</span>
         </div>
       </div>
-      <div className="flex justify-center items-center  h-[325px] bg-white border border-black/50 mt-7 mx-auto">
-        <div>
-          <p>สินค้าใน</p>
+      <div className="h-[325px] bg-white border border-black/50 mt-7 mx-auto py-4 px-6">
+        <div className="flex items-center">
+          <p className="opacity-70 text-black text-lg font-bold ">สินค้าใน</p>
+          <input
+            className="w-[65px] h-[25px] bg-[#d9d9d9]/50 border border-black ml-2"
+            type="text"
+          />
         </div>
-        
+        {/* Table Header */}
+<div className="px-4 p-4 w-full h-[60px] mb-4">
+  <div className="flex gap-6">
+    <p className="w-[100px] flex items-center justify-center text-center">No</p>
+    <p className="w-[150px] flex items-center justify-center text-center">ID</p>
+    <p className="w-[120px] flex items-center justify-center text-center">Type</p>
+    <p className="w-[200px] flex items-center justify-center text-center">Name</p>
+    <p className="w-[130px] flex items-center justify-center text-center">Location</p>
+    <p className="w-[120px] flex items-center justify-center text-center">In</p>
+    <p className="w-[120px] flex items-center justify-center text-center">End</p>
+    <p className="w-[150px] flex items-center justify-center text-center">Status</p>
+  </div>
+</div>
+        {data.map((item) => (
+          <div
+            key={item.key}
+            className="px-4 p-4 w-full h-[70px] mb-4 bg-white rounded-[13.05px] shadow-[1.3054757118225098px_22.193086624145508px_57.4409294128418px_0px_rgba(3,2,41,0.07)]"
+          >
+            <div className="flex gap-6">
+              <div className="w-[100px] flex items-center justify-center text-center">
+                {item.no}
+              </div>
+              <div className="w-[150px] flex items-center justify-center text-center">
+                {item.id}
+              </div>
+              <div className="w-[120px] flex items-center justify-center text-center">
+                {item.type}
+              </div>
+              <div className="w-[200px] flex items-center justify-center text-center">
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-10 h-10 rounded-full mr-2"
+                />
+                {item.name}
+              </div>
+              <div className="w-[130px] flex items-center justify-center text-center">
+                {item.location}
+              </div>
+              <div className="w-[120px] flex items-center justify-center text-center">
+                {item.in}
+              </div>
+              <div className="w-[120px] flex items-center justify-center text-center">
+                {item.end}
+              </div>
+              <div className="w-[150px] flex items-center justify-center text-center">
+                Succes
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

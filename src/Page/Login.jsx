@@ -24,7 +24,7 @@ const Login = () => {
 
     try {
       const response = await axios.post("http://172.18.43.37:3000/api/login", {
-        employeeId: employeeID, // ปรับให้ใช้ employeeId แทน employeeID
+        employeeId: employeeID,
         password,
       });
 
@@ -92,18 +92,16 @@ const Login = () => {
               ลงทะเบียน
             </Link>
             <p>หรือ</p>
-            <a className="text-[#1565f9]" href="#">
+            <Link to="/PasswordResetLink" className="text-[#1565f9]">
               ลืมรหัสผ่าน?
-            </a>
+            </Link>
           </div>
 
           <div>
             <button
-              className={`w-[158.38px] h-[63.27px] bg-[#252265] rounded-[18.72px] text-white hover:bg-[#ffffff] hover:text-[#252265] ${
-                loading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              className={`w-[158.38px] h-[63.27px] bg-[#252265] rounded-[18.72px] text-white hover:bg-[#ffffff] hover:text-[#252265]`}
               onClick={handleLogin}
-              disabled={loading}
+              disabled={loading} 
             >
               {loading ? "กำลังโหลด..." : "Login"}
             </button>

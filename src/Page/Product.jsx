@@ -106,59 +106,76 @@ const Product = () => {
         </div>
 
         {/* Table Header */}
-<div className="px-4 p-4 w-full h-[60px] mb-4">
-  <div className="flex gap-6">
-    <p className="w-[100px] flex items-center justify-center text-center">No</p>
-    <p className="w-[150px] flex items-center justify-center text-center">ID</p>
-    <p className="w-[120px] flex items-center justify-center text-center">Type</p>
-    <p className="w-[200px] flex items-center justify-center text-center">Name</p>
-    <p className="w-[130px] flex items-center justify-center text-center">Location</p>
-    <p className="w-[120px] flex items-center justify-center text-center">In</p>
-    <p className="w-[120px] flex items-center justify-center text-center">End</p>
-    <p className="w-[150px] flex items-center justify-center text-center">Status</p>
-  </div>
-</div>
+        <div className="px-4 p-4 w-full h-[60px] mb-4">
+          <div className="flex gap-6">
+            <p className="w-[100px] flex items-center justify-center text-center">
+              No
+            </p>
+            <p className="w-[150px] flex items-center justify-center text-center">
+              ID
+            </p>
+            <p className="w-[120px] flex items-center justify-center text-center">
+              Type
+            </p>
+            <p className="w-[200px] flex items-center justify-center text-center">
+              Name
+            </p>
+            <p className="w-[130px] flex items-center justify-center text-center">
+              Location
+            </p>
+            <p className="w-[120px] flex items-center justify-center text-center">
+              In
+            </p>
+            <p className="w-[120px] flex items-center justify-center text-center">
+              End
+            </p>
+            <p className="w-[150px] flex items-center justify-center text-center">
+              Status
+            </p>
+          </div>
+        </div>
 
-{/* Data Table */}
-{filteredData.map((item) => (
-  <div
-    key={item.key}
-    className="px-4 p-4 w-full h-[70px] mb-4 bg-white rounded-[13.05px] shadow-[1.3054757118225098px_22.193086624145508px_57.4409294128418px_0px_rgba(3,2,41,0.07)]"
-  >
-    <div className="flex gap-6"> {/* ใช้ gap-6 เพื่อเพิ่มระยะห่างระหว่างคอลัมน์ */}
-      <div className="w-[100px] flex items-center justify-center text-center">
-        {item.no}
-      </div>
-      <div className="w-[150px] flex items-center justify-center text-center">
-        {item.id}
-      </div>
-      <div className="w-[120px] flex items-center justify-center text-center">
-        {item.type}
-      </div>
-      <div className="w-[200px] flex items-center justify-center text-center">
-        <img
-          src={item.image}
-          alt={item.name}
-          className="w-10 h-10 rounded-full mr-2"
-        />
-        {item.name}
-      </div>
-      <div className="w-[130px] flex items-center justify-center text-center">
-        {item.location}
-      </div>
-      <div className="w-[120px] flex items-center justify-center text-center">
-        {item.in}
-      </div>
-      <div className="w-[120px] flex items-center justify-center text-center">
-        {item.end}
-      </div>
-      <div className="w-[150px] flex items-center justify-center text-center">
-        {getStatusTag(item.quantity)} {/* แสดงสถานะตามจำนวน */}
-      </div>
-    </div>
-  </div>
-))}
-
+        {/* Data Table */}
+        {filteredData.map((item) => (
+          <div
+            key={item.key}
+            className="px-4 p-4 w-full h-[70px] mb-4 bg-white rounded-[13.05px] shadow-[1.3054757118225098px_22.193086624145508px_57.4409294128418px_0px_rgba(3,2,41,0.07)]"
+          >
+            <div className="flex gap-6">
+              {" "}
+              {/* ใช้ gap-6 เพื่อเพิ่มระยะห่างระหว่างคอลัมน์ */}
+              <div className="w-[100px] flex items-center justify-center text-center">
+                {item.no}
+              </div>
+              <div className="w-[150px] flex items-center justify-center text-center">
+                {item.id}
+              </div>
+              <div className="w-[120px] flex items-center justify-center text-center">
+                {item.type}
+              </div>
+              <div className="w-[200px] flex items-center justify-center text-center">
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-10 h-10 rounded-full mr-2"
+                />
+                {item.name}
+              </div>
+              <div className="w-[130px] flex items-center justify-center text-center">
+                {item.location}
+              </div>
+              <div className="w-[120px] flex items-center justify-center text-center">
+                {item.in}
+              </div>
+              <div className="w-[120px] flex items-center justify-center text-center">
+                {item.end}
+              </div>
+              <div className="w-[150px] flex items-center justify-center text-center">
+                {getStatusTag(item.quantity)} {/* แสดงสถานะตามจำนวน */}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
