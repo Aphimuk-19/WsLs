@@ -2,6 +2,7 @@
 import React, { useContext, useRef, useEffect } from "react";
 import HeaderManageLocation from "../Custom/HeaderManageLocation";
 import { LocationContext } from "../Context/LocationContext";
+import { PlusCircleOutlined } from "@ant-design/icons";
 
 const Managelocation = () => {
   const {
@@ -48,7 +49,7 @@ const Managelocation = () => {
             <select
               value={cellCount}
               onChange={(e) => setCellCount(Number(e.target.value))}
-              className="px-4 py-2 border rounded"
+              className="h-[37px] px-4 py-2 border rounded text-sm"
             >
               <option value={1}>1 เซลล์</option>
               <option value={2}>2 เซลล์</option>
@@ -60,14 +61,15 @@ const Managelocation = () => {
               type="number"
               value={capacity}
               onChange={(e) => setCapacity(Number(e.target.value))}
-              className="px-4 py-2 border rounded"
+              className="h-[37px] px-4 py-2 border rounded text-sm"
               min="1"
               max="10"
             />
             <button
               onClick={handleAddColumn}
-              className="px-4 py-2 bg-blue-500 text-white rounded"
+              className="h-[37px] px-4 py-2 bg-[#006ec4] rounded justify-center items-center gap-[7.92px] inline-flex text-white text-[15px] font-light leading-[19px] hover:bg-[#006ec4] hover:brightness-110 hover:shadow-md"
             >
+              <PlusCircleOutlined />
               Add Location
             </button>
           </div>
@@ -100,7 +102,8 @@ const Managelocation = () => {
                       const cellId = `${row}-${col}`;
                       const isDisabled = cellStatus[cellId] === "disabled";
                       const cellCapacity =
-                        newCells[col]?.find((cell) => cell.row === row)?.capacity || 0;
+                        newCells[col]?.find((cell) => cell.row === row)
+                          ?.capacity || 0;
                       return (
                         <div
                           key={cellId}
@@ -116,20 +119,25 @@ const Managelocation = () => {
                           <div className="flex items-center justify-center">
                             {row}-{col}
                           </div>
-                          {isCellAvailable && !isDisabled && selectedCell === cellId && (
-                            <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white opacity-90 z-10">
-                              <select
-                                onChange={(e) =>
-                                  handleCellStatusChange(cellId, e.target.value)
-                                }
-                                className="p-2 border rounded"
-                                defaultValue=""
-                              >
-                                <option value="">เลือกสถานะ</option>
-                                <option value="disabled">ปิดการใช้งาน</option>
-                              </select>
-                            </div>
-                          )}
+                          {isCellAvailable &&
+                            !isDisabled &&
+                            selectedCell === cellId && (
+                              <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white opacity-90 z-10">
+                                <select
+                                  onChange={(e) =>
+                                    handleCellStatusChange(
+                                      cellId,
+                                      e.target.value
+                                    )
+                                  }
+                                  className="p-2 border rounded"
+                                  defaultValue=""
+                                >
+                                  <option value="">เลือกสถานะ</option>
+                                  <option value="disabled">ปิดการใช้งาน</option>
+                                </select>
+                              </div>
+                            )}
                           {isCellAvailable && (
                             <div className="absolute bottom-0 left-0 w-full text-center text-xs">
                               Capacity: {cellCapacity}

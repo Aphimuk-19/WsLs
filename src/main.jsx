@@ -19,6 +19,7 @@ import PasswordResetLink from "./Page/PasswordResetLink";
 import ResetPasswordForm from "./Page/ResetPasswordForm";
 import EditProfilePage from "./Page/EditProfilePage";
 
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <LocationProvider>
@@ -27,7 +28,7 @@ createRoot(document.getElementById("root")).render(
           {/* Default route */}
           <Route path="/" element={<Login />} />
           <Route path="/Login" element={<Login />} />
-          <Route path="/PasswordResetLink" element={<PasswordResetLink />} />
+          <Route path="/Login" element={<Login />} />
           <Route path="/PasswordResetLink" element={<PasswordResetLink />} />
           <Route path="/ResetPasswordForm" element={<ResetPasswordForm />} />
           <Route path="/EditProfilePage" element={<EditProfilePage />} />

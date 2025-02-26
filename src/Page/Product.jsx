@@ -67,12 +67,33 @@ const Product = () => {
   };
 
   const getStatusTag = (quantity) => {
+    const tagStyle = {
+      width: "70px", // ความกว้างเริ่มต้น + 10px (ปรับได้ตามต้องการ)
+      borderRadius: "12px", // เพิ่มขอบโค้ง
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "24px", // รักษาความสูงให้สม่ำเสมอ
+    };
+  
     if (quantity === 0) {
-      return <Tag color="red">Out</Tag>; // If quantity is 0, show "Out" with red color
+      return (
+        <Tag color="red" style={tagStyle}>
+          Out
+        </Tag>
+      ); // หากจำนวนเป็น 0 แสดง "Out" ด้วยสีแดง
     } else if (quantity < 10) {
-      return <Tag color="yellow">Low</Tag>; // If quantity is less than 10, show "Low" with yellow color
+      return (
+        <Tag color="yellow" style={tagStyle}>
+          Low
+        </Tag>
+      ); // หากจำนวนน้อยกว่า 10 แสดง "Low" ด้วยสีเหลือง
     } else {
-      return <Tag color="green">Active</Tag>; // Otherwise, show "Active" with green color
+      return (
+        <Tag color="green" style={tagStyle}>
+          Active
+        </Tag>
+      ); // มิฉะนั้น แสดง "Active" ด้วยสีเขียว
     }
   };
 

@@ -1,6 +1,7 @@
 // src/Page/ProductLocation.jsx
 import React, { useContext, useRef, useEffect } from "react";
 import { LocationContext } from "../Context/LocationContext";
+import { PlusCircleOutlined } from "@ant-design/icons";
 
 const data = [
   {
@@ -46,7 +47,13 @@ const ProductLocation = () => {
   }, [setSelectedCell]);
 
   return (
-    <div className="p-4 max-w-6xl mx-auto w-full mt-[50px]">
+    <div className="p-4 max-w-6xl mx-auto w-full mt-[30px]">
+      <div className="mb-6 flex items-center justify-end">
+        <button className="w-[142px] h-[37px] p-[15.83px] bg-[#006ec4] rounded-lg justify-center items-center gap-[7.92px] inline-flex text-white text-[15px] font-light leading-[19px] hover:bg-[#006ec4] hover:brightness-110 hover:shadow-md">
+          <PlusCircleOutlined />
+          In Bound
+        </button>
+      </div>
       <div className="flex overflow-x-auto">
         <div className="flex flex-col justify-between mr-4 pt-1">
           {rows.map((row) => (
@@ -155,18 +162,34 @@ const ProductLocation = () => {
           />
         </div>
         {/* Table Header */}
-<div className="px-4 p-4 w-full h-[60px] mb-4">
-  <div className="flex gap-6">
-    <p className="w-[100px] flex items-center justify-center text-center">No</p>
-    <p className="w-[150px] flex items-center justify-center text-center">ID</p>
-    <p className="w-[120px] flex items-center justify-center text-center">Type</p>
-    <p className="w-[200px] flex items-center justify-center text-center">Name</p>
-    <p className="w-[130px] flex items-center justify-center text-center">Location</p>
-    <p className="w-[120px] flex items-center justify-center text-center">In</p>
-    <p className="w-[120px] flex items-center justify-center text-center">End</p>
-    <p className="w-[150px] flex items-center justify-center text-center">Status</p>
-  </div>
-</div>
+        <div className="px-4 p-4 w-full h-[60px] mb-4">
+          <div className="flex gap-6">
+            <p className="w-[100px] flex items-center justify-center text-center">
+              No
+            </p>
+            <p className="w-[150px] flex items-center justify-center text-center">
+              ID
+            </p>
+            <p className="w-[120px] flex items-center justify-center text-center">
+              Type
+            </p>
+            <p className="w-[200px] flex items-center justify-center text-center">
+              Name
+            </p>
+            <p className="w-[130px] flex items-center justify-center text-center">
+              Location
+            </p>
+            <p className="w-[120px] flex items-center justify-center text-center">
+              In
+            </p>
+            <p className="w-[120px] flex items-center justify-center text-center">
+              End
+            </p>
+            <p className="w-[150px] flex items-center justify-center text-center">
+              Status
+            </p>
+          </div>
+        </div>
         {data.map((item) => (
           <div
             key={item.key}

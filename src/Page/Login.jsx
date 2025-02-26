@@ -9,6 +9,7 @@ const Login = () => {
   const [employeeID, setEmployeeID] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false); // สถานะ success
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -32,7 +33,10 @@ const Login = () => {
       if (token) {
         localStorage.setItem("token", token);
         console.log("ล็อกอินสำเร็จ:", response.data);
-        navigate("/Dashboard");
+        setSuccess(true); // ตั้งค่า success เป็น true
+        setTimeout(() => {
+          navigate("/Dashboard"); // เปลี่ยนหน้าไป Dashboard หลังจาก 2 วินาที
+        }, 2000);
       } else {
         setError("ไม่ได้รับ token จาก API");
       }
@@ -48,7 +52,7 @@ const Login = () => {
 
   return (
     <div className="bg-jib h-screen flex justify-center items-center">
-      <div className="bg-[#ffffff] opacity-[0.85] rounded-[29px] w-[700px] h-[520px] shadow-[inset_5px_5px_4px_rgba(0,0,0,0.1)] p-8">
+      <div className="bg-[rgba(255,255,255,0.85)] rounded-[29px] w-[700px] h-[520px] shadow-[inset_5px_5px_4px_rgba(0,0,0,0.1)] p-8">
         <div className="flex items-center justify-center gap-4 mb-6">
           <p className="text-black text-[37.45px] font-bold uppercase">Login</p>
           <img
@@ -86,6 +90,11 @@ const Login = () => {
           />
 
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          {success && (
+            <p className="text-green-500 text-sm text-center">
+              ล็อกอินสำเร็จ!
+            </p>
+          )}
 
           <div className="flex items-center justify-center gap-1">
             <Link to="/Register" className="text-[#1565f9]">
@@ -99,9 +108,9 @@ const Login = () => {
 
           <div>
             <button
-              className={`w-[158.38px] h-[63.27px] bg-[#252265] rounded-[18.72px] text-white hover:bg-[#ffffff] hover:text-[#252265]`}
+              className="w-[158.38px] h-[63.27px] bg-[#252265] rounded-[18.72px] text-white hover:bg-[#ffffff] hover:text-[#252265]"
               onClick={handleLogin}
-              disabled={loading} 
+              disabled={loading}
             >
               {loading ? "กำลังโหลด..." : "Login"}
             </button>
