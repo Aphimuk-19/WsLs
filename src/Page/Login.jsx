@@ -9,7 +9,7 @@ const Login = () => {
   const [employeeID, setEmployeeID] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false); // สถานะ success
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -24,18 +24,38 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await axios.post("http://172.18.43.37:3000/api/login", {
+      const response = await axios.post("http://172.18.43.37:3000/api/auth/login", {
         employeeId: employeeID,
         password,
       });
 
-      const token = response.data.token;
+      console.log("API Response:", response.data);
+
+      const { token, user } = response.data;
       if (token) {
         localStorage.setItem("token", token);
-        console.log("ล็อกอินสำเร็จ:", response.data);
-        setSuccess(true); // ตั้งค่า success เป็น true
+        
+        // ดึงข้อมูลจาก user
+        const userRole = user && user.role ? user.role.toLowerCase() : "user";
+        const firstName = user && user.firstName ? user.firstName : "";
+        const lastName = user && user.lastName ? user.lastName : "";
+        const email = user && user.email ? user.email : "";
+
+        // เก็บข้อมูลลง localStorage
+        localStorage.setItem("role", userRole);
+        localStorage.setItem("firstName", firstName);
+        localStorage.setItem("lastName", lastName);
+        localStorage.setItem("email", email);
+
+        console.log("Stored Role:", localStorage.getItem("role"));
+        console.log("Stored FirstName:", localStorage.getItem("firstName"));
+        console.log("Stored LastName:", localStorage.getItem("lastName"));
+        console.log("Stored Email:", localStorage.getItem("email"));
+
+
+        setSuccess(true);
         setTimeout(() => {
-          navigate("/Dashboard"); // เปลี่ยนหน้าไป Dashboard หลังจาก 2 วินาที
+          navigate("/Dashboard");
         }, 2000);
       } else {
         setError("ไม่ได้รับ token จาก API");

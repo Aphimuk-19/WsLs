@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Dropdown, Space, Badge, Menu } from "antd";
 import {
   DownOutlined,
   BellOutlined,
-  SettingOutlined,
   PieChartOutlined,
   AppstoreOutlined,
   ShoppingCartOutlined,
@@ -26,7 +25,39 @@ const Sidebar = () => {
     { key: "3", message: "New comment on your post" },
   ]);
   const [currentPage, setCurrentPage] = useState("Dashboard");
+  const [userRole, setUserRole] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState(""); // state สำหรับ email
   const navigate = useNavigate();
+
+  // ฟังก์ชันดึงข้อมูลผู้ใช้จาก localStorage
+  const updateUserData = () => {
+    const role = localStorage.getItem("role");
+    const storedFirstName = localStorage.getItem("firstName");
+    const storedLastName = localStorage.getItem("lastName");
+    const storedEmail = localStorage.getItem("email");
+
+    setUserRole(role ? role.toLowerCase() : "user");
+    setFirstName(storedFirstName || "");
+    setLastName(storedLastName || ""); // ตั้งค่า lastName อย่างถูกต้อง
+    setEmail(storedEmail || "");       // ตั้งค่า email อย่างถูกต้อง
+
+    console.log("Sidebar User Role:", role);
+    console.log("Sidebar FirstName:", storedFirstName);
+    console.log("Sidebar LastName:", storedLastName);
+    console.log("Sidebar Email:", storedEmail);
+  };
+
+  // เรียกใช้เมื่อโหลดครั้งแรก และเมื่อ localStorage เปลี่ยนแปลง
+  useEffect(() => {
+    updateUserData(); // ดึงข้อมูลครั้งแรก
+    window.addEventListener("storage", updateUserData); // ฟังการเปลี่ยนแปลงใน localStorage
+
+    return () => {
+      window.removeEventListener("storage", updateUserData); // ล้าง event listener
+    };
+  }, []);
 
   const handleMenuClick = ({ key }) => {
     const menuMap = {
@@ -42,7 +73,7 @@ const Sidebar = () => {
     setCurrentPage(selectedPage);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentPage === "Dashboard") navigate("/Dashboard");
     if (currentPage === "Product") navigate("/Product");
     if (currentPage === "ProductLocation") navigate("/ProductLocation");
@@ -61,41 +92,54 @@ const Sidebar = () => {
     { key: "2", label: "Product", icon: <ShoppingCartOutlined /> },
     { key: "3", label: "Product Location", icon: <AppstoreOutlined /> },
     { key: "4", label: "Manage Location", icon: <DatabaseOutlined /> },
-    { key: "5", label: "Manage User", icon: <TeamOutlined /> },
+    ...(userRole === "admin" ? [{ key: "5", label: "Manage User", icon: <TeamOutlined /> }] : []),
     !collapsed && {
       key: "Other",
       label: <div style={{ padding: "0 16px", fontWeight: "bold", fontSize: "12px" }}>OTHER</div>,
       disabled: true,
     },
     { key: "6", label: "Accounts", icon: <UserOutlined /> },
-  ];
+  ].filter(Boolean);
 
-  // Updated user dropdown menu items
   const item = [
     {
       key: "1",
-      label: "My Account",
+      label: (
+        <div className="flex items-center justify-center flex-col">
+          <img
+            src="/src/Image/man-4123268_1280.jpg"
+            alt="Profile"
+            style={{ width: "44px", height: "44px", marginBottom: "8px", borderRadius: "50%" }}
+          />
+          <div style={{ textAlign: "center" }}>
+            <div>{firstName} {lastName}</div> {/* แสดง firstName และ lastName */}
+            <div style={{ fontSize: "12px", color: "#888" }}>{email}</div> {/* แสดง email */}
+          </div>
+        </div>
+      ),
       disabled: true,
     },
-    {
-      type: "divider",
-    },
+    { type: "divider" },
     {
       key: "2",
       label: "Account",
       onClick: () => {
         setHeaderText("Account");
-        setCurrentPage("Account"); 
+        setCurrentPage("Account");
       },
     },
-   
     {
       key: "3",
       label: "Logout",
       icon: <LogoutOutlined />,
       onClick: () => {
-        navigate("/Login"); // นำทางไปยังหน้า Login
-      }
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        localStorage.removeItem("firstName");
+        localStorage.removeItem("lastName");
+        localStorage.removeItem("email"); // ลบ email
+        navigate("/Login");
+      },
     },
   ];
 
@@ -193,19 +237,19 @@ const Sidebar = () => {
           >
             <img
               src="/src/Image/man-4123268_1280.jpg"
-              alt="Logo"
+              alt="Profile"
               style={{ width: 40, height: 40, borderRadius: "50%" }}
             />
             <Dropdown menu={{ items: item }}>
               <a onClick={(e) => e.preventDefault()}>
                 <Space className="text-[#1f384c] text-[16px] font-normal hover:text-blue-500">
-                  b.fernandes
+                  {firstName} {lastName} {/* แสดง firstName และ lastName */}
                   <DownOutlined className="ml-2" style={{ fontSize: "10px" }} />
                 </Space>
               </a>
             </Dropdown>
 
-            <Dropdown overlay={notificationMenu} trigger={['click']}>
+            <Dropdown overlay={notificationMenu} trigger={["click"]}>
               <Badge count={notifications.length} offset={[10, 0]}>
                 <BellOutlined
                   style={{

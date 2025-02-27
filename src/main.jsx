@@ -25,7 +25,6 @@ createRoot(document.getElementById("root")).render(
     <LocationProvider>
       <BrowserRouter>
         <Routes>
-          {/* Default route */}
           <Route path="/" element={<Login />} />
           <Route path="/Login" element={<Login />} />
           <Route path="/Login" element={<Login />} />

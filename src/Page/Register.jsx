@@ -50,7 +50,7 @@ const Register = () => {
 
     try {
       // ส่งข้อมูลไปยัง API
-      const response = await fetch("http://172.18.43.37:3000/api/Register", {
+      const response = await fetch("http://172.18.43.37:3000/api/auth/Register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
