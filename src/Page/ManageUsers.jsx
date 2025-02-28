@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Input, Button, Tag, Select, Dropdown, Menu } from "antd";
-import { SearchOutlined, DownOutlined, PlusOutlined, DeleteFilled } from "@ant-design/icons";
+import { Input, Tag, Select, Dropdown, Menu, message } from "antd";
+import { SearchOutlined, DownOutlined, DeleteFilled } from "@ant-design/icons";
 import axios from "axios";
 
 const ManageUsers = () => {
@@ -18,12 +18,13 @@ const ManageUsers = () => {
             Authorization: `Bearer ${token}`,
           },
         });
+        console.log("API Response:", response.data.data); // ดูโครงสร้างข้อมูล
 
         const defaultImage = "https://t3.ftcdn.net/jpg/02/43/12/34/360_F_243123463_zTooub557xEWABDLk0jJklDyLSGl2jrr.jpg";
         const mappedData = response.data.data.map((user, index) => ({
           key: String(index + 1),
-          id: user.employeeId || `#876${364 + index}`,
-          name: `${user.firstName || "Unknown"} ${user.lastName || ""}`.trim(), // จัดการกรณีข้อมูลขาด
+          id: user.employeeId || `#876${364 + index}`, // ใช้ employeeId แทน user.id
+          name: `${user.firstName || "Unknown"} ${user.lastName || ""}`.trim(),
           image: user.profileImage || defaultImage,
           Email: user.email,
           type: user.role,
@@ -33,7 +34,7 @@ const ManageUsers = () => {
         setFilteredData(mappedData);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching users:", error.response?.data || error.message);
         setLoading(false);
       }
     };
@@ -71,9 +72,10 @@ const ManageUsers = () => {
   const updateUserRole = async (key, role) => {
     try {
       const user = filteredData.find((item) => item.key === key);
+      console.log("Sending update for user:", { id: user.id, role }); // ตรวจสอบ id
       const token = localStorage.getItem("token");
-      await axios.put(
-        `http://172.18.43.37:3000/api/users/role/${user.id}`,
+      const response = await axios.put(
+        `http://172.18.43.37:3000/api/users/role-by-employee/${user.id}`, // เปลี่ยน URL
         { role },
         {
           headers: {
@@ -82,15 +84,16 @@ const ManageUsers = () => {
         }
       );
       console.log(`Role updated for user ${user.id} to ${role}`);
+      message.success("Success");
     } catch (error) {
-      console.error("Error updating role:", error);
+      console.error("Error updating role:", error.response?.data || error.message);
+      message.error("Failed to update role");
     }
   };
 
   const handleDelete = (key) => {
     setFilteredData((prevData) => prevData.filter((item) => item.key !== key));
   };
-
 
   const getStatusTag = (status) => {
     const tagStyle = {
@@ -173,7 +176,7 @@ const ManageUsers = () => {
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   </div>
-                  <span className="text-left flex-1 min-w-0">{item.name}</span> {/* ชื่อชิดซ้ายและยืดหยุ่น */}
+                  <span className="text-left flex-1 min-w-0">{item.name}</span>
                 </div>
               </div>
               <div className="flex-[3] flex items-center justify-center">{item.Email}</div>
