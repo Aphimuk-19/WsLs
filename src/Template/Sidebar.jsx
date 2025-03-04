@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Dropdown, Space, Badge, Menu } from "antd";
 import {
   DownOutlined,
@@ -13,6 +13,7 @@ import {
   LogoutOutlined
 } from "@ant-design/icons";
 import { Layout } from "antd";
+import axios from 'axios';
 
 const { Header, Sider } = Layout;
 
@@ -24,38 +25,78 @@ const Sidebar = () => {
     { key: "2", message: "Product update available" },
     { key: "3", message: "New comment on your post" },
   ]);
-  const [currentPage, setCurrentPage] = useState("Dashboard");
+  const [currentPage, setCurrentPage] = useState("");
   const [userRole, setUserRole] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState(""); // state สำหรับ email
+  const [email, setEmail] = useState("");
+  const [profilePicture, setProfilePicture] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // ฟังก์ชันดึงข้อมูลผู้ใช้จาก localStorage
-  const updateUserData = () => {
-    const role = localStorage.getItem("role");
-    const storedFirstName = localStorage.getItem("firstName");
-    const storedLastName = localStorage.getItem("lastName");
-    const storedEmail = localStorage.getItem("email");
+  const fetchUserProfile = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.log("No token found, skipping profile fetch");
+      return;
+    }
 
-    setUserRole(role ? role.toLowerCase() : "user");
-    setFirstName(storedFirstName || "");
-    setLastName(storedLastName || ""); // ตั้งค่า lastName อย่างถูกต้อง
-    setEmail(storedEmail || "");       // ตั้งค่า email อย่างถูกต้อง
+    try {
+      const response = await axios.get('http://172.18.43.37:3000/api/users/profile/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const userData = response.data.data;
 
-    console.log("Sidebar User Role:", role);
-    console.log("Sidebar FirstName:", storedFirstName);
-    console.log("Sidebar LastName:", storedLastName);
-    console.log("Sidebar Email:", storedEmail);
+      setUserRole(userData.role ? userData.role.toLowerCase() : "user");
+      setFirstName(userData.firstName || "");
+      setLastName(userData.lastName || "");
+      setEmail(userData.email || "");
+      setProfilePicture(userData.profilePicture || "");
+
+      localStorage.setItem("role", userData.role);
+      localStorage.setItem("firstName", userData.firstName);
+      localStorage.setItem("lastName", userData.lastName);
+      localStorage.setItem("email", userData.email);
+
+      console.log("Fetched User Role:", userData.role);
+      console.log("Fetched FirstName:", userData.firstName);
+      console.log("Fetched LastName:", userData.lastName);
+      console.log("Fetched Email:", userData.email);
+      console.log("Fetched Profile Picture:", userData.profilePicture);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/Login");
+      }
+    }
   };
 
-  // เรียกใช้เมื่อโหลดครั้งแรก และเมื่อ localStorage เปลี่ยนแปลง
   useEffect(() => {
-    updateUserData(); // ดึงข้อมูลครั้งแรก
-    window.addEventListener("storage", updateUserData); // ฟังการเปลี่ยนแปลงใน localStorage
+    const pathToPageMap = {
+      "/Dashboard": "Dashboard",
+      "/Product": "Product",
+      "/ProductLocation": "ProductLocation",
+      "/Managelocation": "Managelocation",
+      "/ManageUsers": "ManageUsers",
+      "/Account": "Account",
+    };
 
+    const currentPath = location.pathname;
+    const page = pathToPageMap[currentPath] || "Dashboard";
+
+    setCurrentPage(page);
+    setHeaderText(page);
+
+    console.log("Current Path:", currentPath);
+    console.log("Set Current Page:", page);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    fetchUserProfile();
+    window.addEventListener("storage", fetchUserProfile);
     return () => {
-      window.removeEventListener("storage", updateUserData); // ล้าง event listener
+      window.removeEventListener("storage", fetchUserProfile);
     };
   }, []);
 
@@ -71,16 +112,28 @@ const Sidebar = () => {
     const selectedPage = menuMap[key] || "Dashboard";
     setHeaderText(selectedPage);
     setCurrentPage(selectedPage);
+    navigate(`/${selectedPage}`);
   };
 
-  useEffect(() => {
-    if (currentPage === "Dashboard") navigate("/Dashboard");
-    if (currentPage === "Product") navigate("/Product");
-    if (currentPage === "ProductLocation") navigate("/ProductLocation");
-    if (currentPage === "Managelocation") navigate("/Managelocation");
-    if (currentPage === "ManageUsers") navigate("/ManageUsers");
-    if (currentPage === "Account") navigate("/Account");
-  }, [currentPage, navigate]);
+  const handleLogoClick = () => {
+    setHeaderText("Dashboard");
+    setCurrentPage("Dashboard");
+    navigate("/Dashboard");
+  };
+
+  const getSelectedKey = () => {
+    const pageToKeyMap = {
+      "Dashboard": "1",
+      "Product": "2",
+      "ProductLocation": "3",
+      "Managelocation": "4",
+      "ManageUsers": "5",
+      "Account": "6",
+    };
+    const selectedKey = pageToKeyMap[currentPage];
+    console.log("Current Page:", currentPage, "Selected Key:", selectedKey);
+    return selectedKey || "1";
+  };
 
   const items = [
     !collapsed && {
@@ -106,14 +159,28 @@ const Sidebar = () => {
       key: "1",
       label: (
         <div className="flex items-center justify-center flex-col">
-          <img
-            src="/src/Image/man-4123268_1280.jpg"
-            alt="Profile"
-            style={{ width: "44px", height: "44px", marginBottom: "8px", borderRadius: "50%" }}
-          />
+          {profilePicture ? (
+            <img
+              src={profilePicture}
+              alt="Profile"
+              style={{
+                width: "44px",
+                height: "44px",
+                marginBottom: "8px",
+                borderRadius: "50%",
+                objectFit: "cover",
+              }}
+            />
+          ) : (
+            <div
+              className="w-[44px] h-[44px] rounded-full bg-gray-400 flex items-center justify-center text-white font-bold mb-[8px]"
+            >
+              {firstName.charAt(0)}
+            </div>
+          )}
           <div style={{ textAlign: "center" }}>
-            <div>{firstName} {lastName}</div> {/* แสดง firstName และ lastName */}
-            <div style={{ fontSize: "12px", color: "#888" }}>{email}</div> {/* แสดง email */}
+            <div>{firstName} {lastName}</div>
+            <div style={{ fontSize: "12px", color: "#888" }}>{email}</div>
           </div>
         </div>
       ),
@@ -123,9 +190,11 @@ const Sidebar = () => {
     {
       key: "2",
       label: "Account",
+      icon: <UserOutlined />,
       onClick: () => {
         setHeaderText("Account");
         setCurrentPage("Account");
+        navigate("/Account");
       },
     },
     {
@@ -137,7 +206,8 @@ const Sidebar = () => {
         localStorage.removeItem("role");
         localStorage.removeItem("firstName");
         localStorage.removeItem("lastName");
-        localStorage.removeItem("email"); // ลบ email
+        localStorage.removeItem("email");
+        setProfilePicture("");
         navigate("/Login");
       },
     },
@@ -176,7 +246,9 @@ const Sidebar = () => {
             display: "flex",
             alignItems: "center",
             border: "none",
+            cursor: "pointer",
           }}
+          onClick={handleLogoClick}
         >
           <img
             src="/src/Image/Logocircle.png"
@@ -191,8 +263,8 @@ const Sidebar = () => {
         </div>
         <Menu
           theme="light"
-          defaultSelectedKeys={["1"]}
           mode="inline"
+          selectedKeys={[getSelectedKey()]}
           items={items}
           style={{
             background: "#F1F2F7",
@@ -235,15 +307,28 @@ const Sidebar = () => {
               marginRight: "30px",
             }}
           >
-            <img
-              src="/src/Image/man-4123268_1280.jpg"
-              alt="Profile"
-              style={{ width: 40, height: 40, borderRadius: "50%" }}
-            />
+            {profilePicture ? (
+              <img
+                src={profilePicture}
+                alt="Profile"
+                style={{
+                  width: "50px",
+                  height: "50px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              <div
+                className="w-[50px] h-[50px] rounded-full bg-gray-400 flex items-center justify-center text-white font-bold"
+              >
+                {firstName.charAt(0)}
+              </div>
+            )}
             <Dropdown menu={{ items: item }}>
               <a onClick={(e) => e.preventDefault()}>
                 <Space className="text-[#1f384c] text-[16px] font-normal hover:text-blue-500">
-                  {firstName} {lastName} {/* แสดง firstName และ lastName */}
+                  {firstName}
                   <DownOutlined className="ml-2" style={{ fontSize: "10px" }} />
                 </Space>
               </a>

@@ -2,35 +2,38 @@ import React, { useState, useEffect } from "react";
 import { Input, Tag, Select, Dropdown, Menu, message } from "antd";
 import { SearchOutlined, DownOutlined, DeleteFilled } from "@ant-design/icons";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const ManageUsers = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [originalData, setOriginalData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState({});
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get("http://172.18.43.37:3000/api/users/all", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("API Response:", response.data.data); // ดูโครงสร้างข้อมูล
+        console.log("API Response:", response.data.data);
 
-        const defaultImage = "https://t3.ftcdn.net/jpg/02/43/12/34/360_F_243123463_zTooub557xEWABDLk0jJklDyLSGl2jrr.jpg";
+        const defaultImage = ""; // รูปเริ่มต้นเป็นค่าว่าง
         const mappedData = response.data.data.map((user, index) => ({
           key: String(index + 1),
-          id: user.employeeId || `#876${364 + index}`, // ใช้ employeeId แทน user.id
+          employeeId: user.employeeId || `#876${364 + index}`,
           name: `${user.firstName || "Unknown"} ${user.lastName || ""}`.trim(),
-          image: user.profileImage || defaultImage,
+          image: user.profilePicture || defaultImage,
           Email: user.email,
           type: user.role,
           status: "Active",
+          id: user.id,
         }));
 
+        setOriginalData(mappedData);
         setFilteredData(mappedData);
         setLoading(false);
       } catch (error) {
@@ -45,10 +48,10 @@ const ManageUsers = () => {
   const handleSearch = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
-    const filtered = filteredData.filter(
+    const filtered = originalData.filter(
       (item) =>
         item.name.toLowerCase().includes(query.toLowerCase()) ||
-        item.id.toLowerCase().includes(query.toLowerCase())
+        item.employeeId.toLowerCase().includes(query.toLowerCase())
     );
     setFilteredData(filtered);
   };
@@ -61,38 +64,67 @@ const ManageUsers = () => {
   };
 
   const handleTypeChange = (key, value) => {
-    setFilteredData((prevData) =>
-      prevData.map((item) =>
-        item.key === key ? { ...item, type: value } : item
-      )
-    );
     updateUserRole(key, value);
   };
 
   const updateUserRole = async (key, role) => {
     try {
       const user = filteredData.find((item) => item.key === key);
-      console.log("Sending update for user:", { id: user.id, role }); // ตรวจสอบ id
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `http://172.18.43.37:3000/api/users/role-by-employee/${user.id}`, // เปลี่ยน URL
+        `http://172.18.43.37:3000/api/role/change/${user.employeeId}`,
         { role },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log(`Role updated for user ${user.id} to ${role}`);
+      console.log(`Role updated for user ${user.employeeId} to ${role}`);
+
+      setFilteredData((prevData) =>
+        prevData.map((item) =>
+          item.key === key ? { ...item, type: role } : item
+        )
+      );
+      setOriginalData((prevData) =>
+        prevData.map((item) =>
+          item.key === key ? { ...item, type: role } : item
+        )
+      );
       message.success("Success");
     } catch (error) {
       console.error("Error updating role:", error.response?.data || error.message);
-      message.error("Failed to update role");
+      message.error(`Failed: ${error.response?.data.message || error.message}`);
     }
   };
 
-  const handleDelete = (key) => {
-    setFilteredData((prevData) => prevData.filter((item) => item.key !== key));
+  const handleDelete = async (key) => {
+    const user = filteredData.find((item) => item.key === key);
+    if (!user) {
+      console.error("User not found for key:", key);
+      return;
+    }
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.delete(
+        `http://172.18.43.37:3000/api/users/users/${user.id}`,
+        { headers: { Authorization: `Bearer ${token}` }, data: { id: user.id } }
+      );
+      console.log(`User ${user.id} deleted successfully:`, response.data);
+      setFilteredData((prevData) => prevData.filter((item) => item.key !== key));
+      setOriginalData((prevData) => prevData.filter((item) => item.key !== key));
+      message.success("User deleted successfully");
+    } catch (error) {
+      console.error("Error deleting user:", error.response?.data || error.message);
+      message.error("Failed to delete user");
+    }
+  };
+
+  const handleEdit = (key) => {
+    const user = filteredData.find((item) => item.key === key);
+    if (!user) {
+      console.error("User not found for key:", key);
+      return;
+    }
+    navigate("/EditProfilePage", { state: { userId: user.id } });
+    console.log("Navigating to EditProfilePage for user:", user.id);
   };
 
   const getStatusTag = (status) => {
@@ -104,11 +136,7 @@ const ManageUsers = () => {
       alignItems: "center",
       height: "24px",
     };
-    return (
-      <Tag color={status === "Active" ? "green" : "volcano"} style={tagStyle}>
-        {status}
-      </Tag>
-    );
+    return <Tag color={status === "Active" ? "green" : "volcano"} style={tagStyle}>{status}</Tag>;
   };
 
   const menu = (key) => (
@@ -116,15 +144,13 @@ const ManageUsers = () => {
       <Menu.Item key="delete" onClick={() => handleDelete(key)}>
         ลบ
       </Menu.Item>
-      <Menu.Item key="edit" onClick={() => console.log("Edit clicked")}>
+      <Menu.Item key="edit" onClick={() => handleEdit(key)}>
         แก้ไข
       </Menu.Item>
     </Menu>
   );
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div className="flex justify-center items-start min-h-screen pt-10">
@@ -166,15 +192,23 @@ const ManageUsers = () => {
                   onChange={() => handleCheckboxChange(item.key)}
                 />
               </div>
-              <div className="flex-[2] flex items-center justify-center">{item.id}</div>
+              <div className="flex-[2] flex items-center justify-center">{item.employeeId}</div>
               <div className="flex-[3] flex items-center">
                 <div className="flex items-center space-x-3 w-full">
                   <div className="w-10 flex-shrink-0 ml-[40px]">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white font-bold"
+                      >
+                        {item.name.charAt(0)}
+                      </div>
+                    )}
                   </div>
                   <span className="text-left flex-1 min-w-0">{item.name}</span>
                 </div>

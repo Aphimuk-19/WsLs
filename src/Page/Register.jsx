@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Input, Select } from "antd";
-import { useNavigate } from "react-router-dom"; // ใช้ useNavigate แทน useHistory
+import { Input, Select, message, Spin } from "antd"; // เพิ่ม message และ Spin
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -15,9 +15,9 @@ const Register = () => {
   });
 
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // ใช้ useNavigate
+  const [loading, setLoading] = useState(false); // เพิ่มสถานะ loading
+  const navigate = useNavigate();
 
-  // ฟังก์ชันที่ใช้จัดการการเปลี่ยนแปลงของ input
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -26,7 +26,6 @@ const Register = () => {
     }));
   };
 
-  // ฟังก์ชันที่ใช้จัดการการเปลี่ยนแปลงของ Select (Department)
   const handleSelectChange = (value) => {
     setFormData((prevData) => ({
       ...prevData,
@@ -34,8 +33,8 @@ const Register = () => {
     }));
   };
 
-  // ฟังก์ชันสำหรับการสมัครสมาชิก
   const handleSubmit = async () => {
+    // ตรวจสอบความถูกต้องของฟอร์ม
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match.");
       return;
@@ -46,35 +45,39 @@ const Register = () => {
       return;
     }
 
-    setError(""); // เคลียร์ข้อผิดพลาดก่อนที่จะส่งข้อมูล
+    setError(""); // เคลียร์ข้อผิดพลาด
+    setLoading(true); // เริ่มโหลด
 
     try {
-      // ส่งข้อมูลไปยัง API
       const response = await fetch("http://172.18.43.37:3000/api/auth/Register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData), // ส่งข้อมูล formData
+        body: JSON.stringify(formData),
       });
 
-      // ตรวจสอบสถานะของการตอบกลับ
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
 
       const data = await response.json();
       console.log("Success:", data);
-      
-      // เปลี่ยนเส้นทางไปยังหน้า Login หลังจากสมัครเสร็จ
-      navigate("/Login"); // ใช้ navigate 
+
+      // แสดงข้อความสำเร็จและเปลี่ยนเส้นทาง
+      message.success("Registration successful! Redirecting to login...");
+      setTimeout(() => {
+        navigate("/Login");
+      }, 1500); // รอ 1.5 วินาทีก่อนเปลี่ยนหน้า
     } catch (error) {
       setError("Registration failed. Please try again.");
       console.error("Error:", error);
+      message.error("Registration failed. Please try again."); // แสดงข้อความผิดพลาด
+    } finally {
+      setLoading(false); // หยุดโหลด
     }
   };
 
-  // ฟังก์ชันที่ใช้ตรวจสอบความถูกต้องของฟอร์ม
   const isFormValid = () => {
     return (
       formData.firstName &&
@@ -98,7 +101,7 @@ const Register = () => {
               Warehouse Support & Location System
             </p>
           </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>} {/* แสดงข้อความข้อผิดพลาด */}
+          {error && <p className="text-red-500 text-sm text-center mt-2">{error}</p>} {/* แสดงข้อความข้อผิดพลาด */}
           <div className="flex items-center justify-center gap-4 mb-3 mt-5">
             <Input
               name="firstName"
@@ -115,7 +118,7 @@ const Register = () => {
               onChange={handleInputChange}
             />
           </div>
-          <div className="flex flex-col justify-start items-center gap-3 ">
+          <div className="flex flex-col justify-start items-center gap-3">
             <Select
               showSearch
               placeholder="Department"
@@ -168,11 +171,11 @@ const Register = () => {
             />
 
             <button
-              className="w-[158.38px] h-[54px] bg-[#252265] rounded-[18.72px] text-white hover:bg-[#ffffff] hover:text-[#252265]"
+              className="w-[158.38px] h-[54px] bg-[#252265] rounded-[18.72px] text-white hover:bg-[#ffffff] hover:text-[#252265] flex items-center justify-center"
               onClick={handleSubmit}
-              disabled={!isFormValid()} // ปิดปุ่มเมื่อฟอร์มไม่ถูกต้อง
+              disabled={!isFormValid() || loading} // ปิดปุ่มเมื่อกำลังโหลด
             >
-              Sign Up
+              {loading ? <Spin size="small" /> : "Sign Up"} {/* แสดง Spin เมื่อโหลด */}
             </button>
           </div>
         </div>

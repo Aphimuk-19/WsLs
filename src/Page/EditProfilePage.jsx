@@ -1,45 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera } from 'lucide-react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const EditProfilePage = () => {
-  // ข้อมูลเริ่มต้น
-  const initialData = {
-    firstName: 'สมชาย',
-    lastName: 'ใจดี',
-    department: 'แผนกพัฒนาซอฟต์แวร์',
-    email: 'somchai@example.com',
-    phone: '0812345678',
-  };
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('userId') || `${userId}`; 
 
-  // State สำหรับฟอร์ม, รูปโปรไฟล์, และสถานะการบันทึก
-  const [formData, setFormData] = useState(initialData);
-  const [profileImage, setProfileImage] = useState('/api/placeholder/120/120');
+  const [formData, setFormData] = useState({
+    firstName: localStorage.getItem('firstName') || '',
+    lastName: localStorage.getItem('lastName') || '',
+    department: '',
+    email: localStorage.getItem('email') || '',
+    phone: '',
+  });
+  const [initialData, setInitialData] = useState(null);
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [profileImageUrl, setProfileImageUrl] = useState('/api/placeholder/120/120');
   const [isSaved, setIsSaved] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // ฟังก์ชันจัดการการเปลี่ยนแปลงในฟอร์ม
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
 
-  // ฟังก์ชันจัดการการอัปโหลดรูปโปรไฟล์
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setProfileImage(imageUrl);
+  const fetchUserProfile = async () => {
+    setLoading(true);
+    try {
+      if (!token) {
+        setError('กรุณา login ใหม่: ไม่พบ token');
+        setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
+  
+      const response = await axios.get('http://172.18.43.37:3000/api/users/profile/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  
+      console.log('API Response:', response.data);
+      const userData = response.data.data;
+  
+      console.log('Profile Picture URL from API:', userData.profilePicture);
+  
+      const updatedFormData = {
+        firstName: userData.firstName || '',
+        lastName: userData.lastName || '',
+        department: userData.department || '',
+        email: userData.email || '',
+        phone: userData.phoneNumber || '',
+        profilePicture: userData.profilePicture || '',
+      };
+  
+      setFormData(updatedFormData);
+      setInitialData(updatedFormData);  
+  
+      const profilePic = userData.profilePicture;
+      if (profilePic) {
+        const baseUrl = 'http://172.18.43.37:3000';
+        const fullImageUrl = profilePic.startsWith('http') ? profilePic : `${baseUrl}${profilePic}`;
+        console.log('Profile Picture URL:', fullImageUrl);
+        setProfileImageUrl(fullImageUrl);
+      } else {
+        console.log('No profile picture found, using placeholder');
+        setProfileImageUrl('/api/placeholder/120/120');
+      }
+    } catch (err) {
+      // ... error handling ...
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ฟังก์ชันจัดการการส่งฟอร์ม
-  const handleSubmit = (e) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileImageFile(file);
+      const imageUrl = URL.createObjectURL(file);
+      setProfileImageUrl(imageUrl);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validation
+
     if (!formData.firstName || !formData.lastName) {
       setError('กรุณากรอกชื่อและนามสกุล');
       return;
@@ -54,25 +104,82 @@ const EditProfilePage = () => {
     }
 
     setError('');
-    console.log('บันทึกข้อมูล:', { ...formData, profileImage });
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000); // แจ้งเตือนหายไปหลัง 3 วินาที
-    // สามารถเพิ่มการส่งข้อมูลไป API ที่นี่
+    setLoading(true);
+
+    try {
+      if (!token) {
+        throw new Error('กรุณา login ใหม่: ไม่พบ token');
+      }
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
+      formDataToSend.append('department', formData.department);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('phoneNumber', formData.phone);
+
+      if (profileImageFile) {
+        formDataToSend.append('profilePicture', profileImageFile);
+      }
+
+      const response = await axios.put(
+        'http://172.18.43.37:3000/api/users/profile/me',
+        formDataToSend,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      const updatedData = response.data.data;
+      localStorage.setItem('firstName', updatedData.firstName);
+      localStorage.setItem('lastName', updatedData.lastName);
+      localStorage.setItem('email', updatedData.email);
+
+      setInitialData({
+        firstName: updatedData.firstName,
+        lastName: updatedData.lastName,
+        department: updatedData.department,
+        email: updatedData.email,
+        phone: updatedData.phoneNumber || '',
+      });
+      setProfileImageUrl(updatedData.profilePicture || profileImageUrl);
+      setProfileImageFile(null);
+      setIsSaved(true);
+      
+      setTimeout(() => {
+        setIsSaved(false);
+        navigate('/Account');
+      }, 1500);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        setError('กรุณา login ใหม่: Token ไม่ถูกต้องหรือหมดอายุ');
+        setTimeout(() => {
+          localStorage.clear();
+          navigate('/login');
+        }, 2000);
+      } else if (err.response?.status === 404) {
+        setError('ไม่พบผู้ใช้สำหรับอัปเดต: ตรวจสอบ userId');
+      } else {
+        setError('เกิดข้อผิดพลาดในการบันทึก: ' + (err.response?.data?.message || err.message));
+      }
+      console.error('Submit Error:', err.response?.data || err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // ฟังก์ชันยกเลิกการแก้ไข
   const handleCancel = () => {
-    setFormData(initialData);
-    setProfileImage('/api/placeholder/120/120');
-    setError('');
-    setIsSaved(false);
+    // ไม่รีเซ็ตฟอร์ม แต่เปลี่ยนหน้าไป /Account ทันที
+    navigate('/Account');
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {/* หัวข้อ */}
           <div className="px-6 py-5 border-b border-gray-200">
             <h1 className="text-xl font-medium text-gray-900">แก้ไขโปรไฟล์</h1>
             <p className="mt-1 text-sm text-gray-500">อัปเดตข้อมูลส่วนตัวของคุณ</p>
@@ -80,11 +187,10 @@ const EditProfilePage = () => {
 
           <form onSubmit={handleSubmit}>
             <div className="px-6 py-6">
-              {/* รูปโปรไฟล์ */}
               <div className="flex flex-col items-center mb-8">
                 <div className="relative mb-4">
                   <img
-                    src={profileImage}
+                    src={profileImageUrl}
                     alt="รูปโปรไฟล์"
                     className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md"
                   />
@@ -94,6 +200,7 @@ const EditProfilePage = () => {
                     accept="image/*"
                     onChange={handleImageChange}
                     className="hidden"
+                    disabled={loading}
                   />
                   <label
                     htmlFor="profileImage"
@@ -110,11 +217,10 @@ const EditProfilePage = () => {
                 </label>
               </div>
 
-              {/* ข้อความแจ้งเตือน */}
               {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
               {isSaved && <p className="text-green-600 text-sm mb-4">บันทึกข้อมูลสำเร็จ!</p>}
+              {loading && <p className="text-gray-600 text-sm mb-4">กำลังโหลด...</p>}
 
-              {/* ข้อมูลส่วนตัว */}
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -128,6 +234,7 @@ const EditProfilePage = () => {
                       value={formData.firstName}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={loading}
                     />
                   </div>
                   <div>
@@ -141,6 +248,7 @@ const EditProfilePage = () => {
                       value={formData.lastName}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -156,6 +264,7 @@ const EditProfilePage = () => {
                     value={formData.department}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={loading}
                   />
                 </div>
 
@@ -170,6 +279,7 @@ const EditProfilePage = () => {
                     value={formData.email}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={loading}
                   />
                 </div>
 
@@ -184,25 +294,27 @@ const EditProfilePage = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={loading}
                   />
                 </div>
               </div>
             </div>
 
-            {/* ปุ่มการกระทำ */}
             <div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
               <button
                 type="button"
                 onClick={handleCancel}
                 className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={loading}
               >
                 ยกเลิก
               </button>
               <button
                 type="submit"
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={loading}
               >
-                บันทึก
+                {loading ? 'กำลังบันทึก...' : 'บันทึก'}
               </button>
             </div>
           </form>
