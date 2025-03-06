@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const PasswordResetLink = () => {
   const [email, setEmail] = useState("");
@@ -7,7 +8,7 @@ const PasswordResetLink = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!email) {
@@ -18,11 +19,22 @@ const PasswordResetLink = () => {
     setIsSubmitting(true);
     setError("");
 
-    // จำลองการส่งคำขอไปยังเซิร์ฟเวอร์
-    setTimeout(() => {
+    try {
+      const response = await axios.post("http://172.18.43.37:3000/api/auth/forgot-password", {
+        email,
+      });
+
+      console.log("API Response:", response.data);
+
       setIsSubmitting(false);
       setIsSuccess(true);
-    }, 1500);
+    } catch (err) {
+      setIsSubmitting(false);
+      console.error("Error sending reset link:", err.response?.data || err.message);
+      setError(
+        err.response?.data?.message || "เกิดข้อผิดพลาดในการส่งลิงก์รีเซ็ตรหัสผ่าน"
+      );
+    }
   };
 
   return (

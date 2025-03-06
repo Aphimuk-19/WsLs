@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Account = () => {
@@ -11,6 +11,7 @@ const Account = () => {
     email: "",
     phoneNumber: "",
     profilePicture: "",
+    employeeId: "", // เพิ่ม employeeId
   });
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +35,8 @@ const Account = () => {
         department: userData.department || "",
         email: userData.email || "",
         phoneNumber: userData.phoneNumber || "",
-        profilePicture: userData.profilePicture || "", // ค่าว่างถ้าไม่มีรูป
+        profilePicture: userData.profilePicture || "",
+        employeeId: userData.employeeId || "N/A", // เพิ่ม employeeId
       });
 
       console.log("Fetched Profile Data:", userData);
@@ -54,6 +56,23 @@ const Account = () => {
   useEffect(() => {
     fetchUserProfile();
   }, []);
+
+  const handleEditProfile = () => {
+    navigate("/EditProfilePage", {
+      state: {
+        userData: {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          department: profile.department,
+          email: profile.email,
+          phone: profile.phoneNumber,
+          profilePicture: profile.profilePicture,
+          employeeId: profile.employeeId, // ส่ง employeeId
+          role: profile.role, // หากมีใน response
+        }
+      }
+    });
+  };
 
   return (
     <div className="mt-[30px] flex justify-center">
@@ -84,7 +103,7 @@ const Account = () => {
                 src={profile.profilePicture}
                 alt="Profile"
                 onError={(e) => {
-                  e.target.src = "/src/Image/man-4123268_1280.jpg"; // Fallback ถ้า URL ไม่ได้
+                  e.target.src = "/src/Image/man-4123268_1280.jpg";
                   console.log("Failed to load profile picture, using fallback");
                 }}
               />
@@ -98,10 +117,25 @@ const Account = () => {
             <p>{profile.firstName} {profile.lastName}</p>
           </div>
           <div>
-            <Link to="/EditProfilePage" className="text-[#1565f9]">
+            <button onClick={handleEditProfile} className="text-[#1565f9]">
               Edit Profile
-            </Link>
+            </button>
           </div>
+        </div>
+
+        <div
+          style={{
+            width: "1013px",
+            height: "1px",
+            backgroundColor: "#dcdcdc",
+            margin: "10px auto",
+          }}
+        ></div>
+
+        {/* Employee ID */}
+        <div className="flex items-center justify-between w-full mt-10 mb-10">
+          <h1 className="text-black text-lg font-medium">Employee ID</h1>
+          <p className="text-black mx-auto">{profile.employeeId}</p>
         </div>
 
         <div

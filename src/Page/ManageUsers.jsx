@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Input, Tag, Select, Dropdown, Menu, message } from "antd";
+import { Input, Tag, Select, Dropdown, Menu, message, Modal } from "antd";
 import { SearchOutlined, DownOutlined, DeleteFilled } from "@ant-design/icons";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+
+const { confirm } = Modal;
 
 const ManageUsers = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,7 +23,7 @@ const ManageUsers = () => {
         });
         console.log("API Response:", response.data.data);
 
-        const defaultImage = ""; // รูปเริ่มต้นเป็นค่าว่าง
+        const defaultImage = "";
         const mappedData = response.data.data.map((user, index) => ({
           key: String(index + 1),
           employeeId: user.employeeId || `#876${364 + index}`,
@@ -31,6 +33,8 @@ const ManageUsers = () => {
           type: user.role,
           status: "Active",
           id: user.id,
+          department: user.department || "",
+          phone: user.phoneNumber || "",
         }));
 
         setOriginalData(mappedData);
@@ -95,26 +99,39 @@ const ManageUsers = () => {
     }
   };
 
-  const handleDelete = async (key) => {
+  const handleDelete = (key) => {
     const user = filteredData.find((item) => item.key === key);
     if (!user) {
       console.error("User not found for key:", key);
       return;
     }
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.delete(
-        `http://172.18.43.37:3000/api/users/users/${user.id}`,
-        { headers: { Authorization: `Bearer ${token}` }, data: { id: user.id } }
-      );
-      console.log(`User ${user.id} deleted successfully:`, response.data);
-      setFilteredData((prevData) => prevData.filter((item) => item.key !== key));
-      setOriginalData((prevData) => prevData.filter((item) => item.key !== key));
-      message.success("User deleted successfully");
-    } catch (error) {
-      console.error("Error deleting user:", error.response?.data || error.message);
-      message.error("Failed to delete user");
-    }
+
+    confirm({
+      title: 'ยืนยันการลบผู้ใช้',
+      content: `คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้ "${user.name}" (ID: ${user.employeeId})?`,
+      okText: 'ตกลง',
+      okType: 'danger',
+      cancelText: 'ยกเลิก',
+      onOk: async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await axios.delete(
+            `http://172.18.43.37:3000/api/users/users/${user.id}`,
+            { headers: { Authorization: `Bearer ${token}` }, data: { id: user.id } }
+          );
+          console.log(`User ${user.id} deleted successfully:`, response.data);
+          setFilteredData((prevData) => prevData.filter((item) => item.key !== key));
+          setOriginalData((prevData) => prevData.filter((item) => item.key !== key));
+          message.success("ลบผู้ใช้สำเร็จ");
+        } catch (error) {
+          console.error("Error deleting user:", error.response?.data || error.message);
+          message.error("ลบผู้ใช้ล้มเหลว: " + (error.response?.data.message || error.message));
+        }
+      },
+      onCancel() {
+        console.log("ยกเลิกการลบผู้ใช้:", user.id);
+      },
+    });
   };
 
   const handleEdit = (key) => {
@@ -123,7 +140,21 @@ const ManageUsers = () => {
       console.error("User not found for key:", key);
       return;
     }
-    navigate("/EditProfilePage", { state: { userId: user.id } });
+    navigate("/EditProfilePage", {
+      state: {
+        userId: user.id,
+        userData: {
+          employeeId: user.employeeId,
+          firstName: user.name.split(" ")[0],
+          lastName: user.name.split(" ").slice(1).join(" ") || "",
+          email: user.Email,
+          role: user.type,
+          profilePicture: user.image,
+          department: user.department,
+          phone: user.phone,
+        }
+      }
+    });
     console.log("Navigating to EditProfilePage for user:", user.id);
   };
 

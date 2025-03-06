@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Camera } from 'lucide-react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const EditProfilePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('userId') || `${userId}`; 
+
+  const { userId, userData } = location.state || {};
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [formData, setFormData] = useState({
-    firstName: localStorage.getItem('firstName') || '',
-    lastName: localStorage.getItem('lastName') || '',
+    firstName: '',
+    lastName: '',
     department: '',
-    email: localStorage.getItem('email') || '',
+    email: '',
     phone: '',
+    employeeId: '',
+    role: '',
   });
   const [initialData, setInitialData] = useState(null);
   const [profileImageFile, setProfileImageFile] = useState(null);
@@ -22,60 +27,66 @@ const EditProfilePage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // ดึงข้อมูลผู้ใช้ที่ล็อกอิน
   useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  const fetchUserProfile = async () => {
-    setLoading(true);
-    try {
-      if (!token) {
-        setError('กรุณา login ใหม่: ไม่พบ token');
-        setTimeout(() => navigate('/login'), 2000);
-        return;
+    const fetchCurrentUser = async () => {
+      try {
+        if (!token) {
+          throw new Error('กรุณา login ใหม่: ไม่พบ token');
+        }
+        const response = await axios.get('http://172.18.43.37:3000/api/users/profile/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCurrentUser(response.data.data);
+      } catch (err) {
+        console.error('Fetch Current User Error:', err.response?.data || err.message);
+        setError('ไม่สามารถดึงข้อมูลผู้ใช้: ' + (err.response?.data?.message || err.message));
       }
-  
-      const response = await axios.get('http://172.18.43.37:3000/api/users/profile/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-  
-      console.log('API Response:', response.data);
-      const userData = response.data.data;
-  
-      console.log('Profile Picture URL from API:', userData.profilePicture);
-  
-      const updatedFormData = {
+    };
+
+    fetchCurrentUser();
+  }, [token]);
+
+  // ตั้งค่า formData
+  useEffect(() => {
+    if (userData) {
+      setFormData({
         firstName: userData.firstName || '',
         lastName: userData.lastName || '',
         department: userData.department || '',
         email: userData.email || '',
-        phone: userData.phoneNumber || '',
-        profilePicture: userData.profilePicture || '',
-      };
-  
-      setFormData(updatedFormData);
-      setInitialData(updatedFormData);  
-  
-      const profilePic = userData.profilePicture;
-      if (profilePic) {
-        const baseUrl = 'http://172.18.43.37:3000';
-        const fullImageUrl = profilePic.startsWith('http') ? profilePic : `${baseUrl}${profilePic}`;
-        console.log('Profile Picture URL:', fullImageUrl);
-        setProfileImageUrl(fullImageUrl);
-      } else {
-        console.log('No profile picture found, using placeholder');
-        setProfileImageUrl('/api/placeholder/120/120');
+        phone: userData.phone || userData.phoneNumber || '',
+        employeeId: userData.employeeId || '',
+        role: userData.role || '',
+      });
+      setProfileImageUrl(userData.profilePicture || '/api/placeholder/120/120');
+      setInitialData(userData);
+    } else if (currentUser && !userId) {
+      setFormData({
+        firstName: currentUser.firstName || '',
+        lastName: currentUser.lastName || '',
+        department: currentUser.department || '',
+        email: currentUser.email || '',
+        phone: currentUser.phoneNumber || '',
+        employeeId: currentUser.employeeId || '',
+        role: currentUser.role || '',
+      });
+      setProfileImageUrl(currentUser.profilePicture || '/api/placeholder/120/120');
+      setInitialData(currentUser);
+    } else if (userId && currentUser) {
+      if (!userData) {
+        setError('ไม่พบข้อมูลผู้ใช้สำหรับแก้ไข');
+        setTimeout(() => navigate('/ManageUsers'), 2000);
       }
-    } catch (err) {
-      // ... error handling ...
-    } finally {
-      setLoading(false);
+    } else {
+      setError('ไม่พบข้อมูลผู้ใช้');
+      setTimeout(() => navigate('/Account'), 2000);
     }
-  };
+  }, [userId, userData, currentUser, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleImageChange = (e) => {
@@ -98,7 +109,7 @@ const EditProfilePage = () => {
       setError('กรุณากรอกอีเมลให้ถูกต้อง');
       return;
     }
-    if (!/^\d{10}$/.test(formData.phone)) {
+    if (formData.phone && !/^\d{10}$/.test(formData.phone)) {
       setError('กรุณากรอกเบอร์โทรศัพท์ 10 หลัก');
       return;
     }
@@ -107,8 +118,8 @@ const EditProfilePage = () => {
     setLoading(true);
 
     try {
-      if (!token) {
-        throw new Error('กรุณา login ใหม่: ไม่พบ token');
+      if (!token || !currentUser) {
+        throw new Error('กรุณา login ใหม่: ไม่พบ token หรือข้อมูลผู้ใช้');
       }
 
       const formDataToSend = new FormData();
@@ -117,13 +128,25 @@ const EditProfilePage = () => {
       formDataToSend.append('department', formData.department);
       formDataToSend.append('email', formData.email);
       formDataToSend.append('phoneNumber', formData.phone);
+      // ไม่ส่ง employeeId เพราะไม่ต้องการให้แก้ไข
+
+      if (currentUser.role === 'admin' && userId) {
+        formDataToSend.append('role', formData.role);
+      }
 
       if (profileImageFile) {
         formDataToSend.append('profilePicture', profileImageFile);
       }
 
+      console.log('Data being sent to API:', Object.fromEntries(formDataToSend));
+
+      const isEditingSelf = !userId || userId === currentUser.id;
+      const url = isEditingSelf
+        ? 'http://172.18.43.37:3000/api/users/profile/me'
+        : `http://172.18.43.37:3000/api/users/profile/${userId}`;
+
       const response = await axios.put(
-        'http://172.18.43.37:3000/api/users/profile/me',
+        url,
         formDataToSend,
         {
           headers: {
@@ -133,48 +156,51 @@ const EditProfilePage = () => {
         }
       );
 
-      const updatedData = response.data.data;
-      localStorage.setItem('firstName', updatedData.firstName);
-      localStorage.setItem('lastName', updatedData.lastName);
-      localStorage.setItem('email', updatedData.email);
+      console.log('Update Response:', response.data);
 
+      const updatedData = response.data.data;
       setInitialData({
         firstName: updatedData.firstName,
         lastName: updatedData.lastName,
         department: updatedData.department,
         email: updatedData.email,
         phone: updatedData.phoneNumber || '',
+        employeeId: updatedData.employeeId || '',
+        role: updatedData.role || '',
       });
       setProfileImageUrl(updatedData.profilePicture || profileImageUrl);
       setProfileImageFile(null);
       setIsSaved(true);
-      
+
       setTimeout(() => {
         setIsSaved(false);
-        navigate('/Account');
+        navigate(isEditingSelf ? '/Account' : '/ManageUsers');
       }, 1500);
     } catch (err) {
+      console.error('Submit Error:', err.response?.data || err.message);
       if (err.response?.status === 401) {
         setError('กรุณา login ใหม่: Token ไม่ถูกต้องหรือหมดอายุ');
         setTimeout(() => {
           localStorage.clear();
           navigate('/login');
         }, 2000);
+      } else if (err.response?.status === 403) {
+        setError('คุณไม่มีสิทธิ์แก้ไขข้อมูลนี้');
       } else if (err.response?.status === 404) {
-        setError('ไม่พบผู้ใช้สำหรับอัปเดต: ตรวจสอบ userId');
+        setError('ไม่พบผู้ใช้สำหรับอัปเดต');
       } else {
         setError('เกิดข้อผิดพลาดในการบันทึก: ' + (err.response?.data?.message || err.message));
       }
-      console.error('Submit Error:', err.response?.data || err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    // ไม่รีเซ็ตฟอร์ม แต่เปลี่ยนหน้าไป /Account ทันที
-    navigate('/Account');
+    navigate(userId && currentUser?.role === 'admin' ? '/ManageUsers' : '/Account');
   };
+
+  if (!currentUser) return <div>Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -182,7 +208,9 @@ const EditProfilePage = () => {
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="px-6 py-5 border-b border-gray-200">
             <h1 className="text-xl font-medium text-gray-900">แก้ไขโปรไฟล์</h1>
-            <p className="mt-1 text-sm text-gray-500">อัปเดตข้อมูลส่วนตัวของคุณ</p>
+            <p className="mt-1 text-sm text-gray-500">
+              อัปเดตข้อมูลของ {formData.firstName} {formData.lastName}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -222,6 +250,19 @@ const EditProfilePage = () => {
               {loading && <p className="text-gray-600 text-sm mb-4">กำลังโหลด...</p>}
 
               <div className="space-y-4">
+                <div>
+                  <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700 mb-1">
+                    รหัสพนักงาน
+                  </label>
+                  <input
+                    type="text"
+                    id="employeeId"
+                    name="employeeId"
+                    value={formData.employeeId}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100"
+                    disabled // ตั้งให้ไม่สามารถแก้ไขได้
+                  />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -297,6 +338,25 @@ const EditProfilePage = () => {
                     disabled={loading}
                   />
                 </div>
+
+                {currentUser.role === 'admin' && userId && (
+                  <div>
+                    <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                      ประเภทผู้ใช้
+                    </label>
+                    <select
+                      id="role"
+                      name="role"
+                      value={formData.role}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={loading}
+                    >
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
 
