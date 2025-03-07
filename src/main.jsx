@@ -1,14 +1,14 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import { BrowserRouter } from "react-router";
+import { BrowserRouter } from "react-router-dom"; // เปลี่ยนจาก "react-router" เป็น "react-router-dom"
 import "@ant-design/v5-patch-for-react-19";
 import React from "react";
 import Login from "./Page/Login";
 import Register from "./Page/Register";
 import Sidebarlayout from "./Layout/Sidebarlayout";
 import Product from "./Page/Product";
-import { Route, Routes } from "react-router";
+import { Route, Routes } from "react-router-dom"; // เปลี่ยนจาก "react-router" เป็น "react-router-dom"
 import Dashboard from "./Page/Dashboard";
 import Managelocation from "./Page/Managelocation";
 import ProductLocation from "./Page/ProductLocation";
@@ -18,7 +18,7 @@ import { LocationProvider } from "./Context/LocationContext";
 import PasswordResetLink from "./Page/PasswordResetLink";
 import ResetPasswordForm from "./Page/ResetPasswordForm";
 import EditProfilePage from "./Page/EditProfilePage";
-
+import Addproduct from "./Page/Addproduct";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -27,12 +27,11 @@ createRoot(document.getElementById("root")).render(
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/Login" element={<Login />} />
+          <Route path="/Register" element={<Register />} />
           <Route path="/PasswordResetLink" element={<PasswordResetLink />} />
           <Route path="/ResetPasswordForm/*" element={<ResetPasswordForm />} />
-          <Route path="/PasswordResetLink" element={<PasswordResetLink />} />
-          <Route path="/ResetPasswordForm" element={<ResetPasswordForm />} />
           <Route path="/EditProfilePage" element={<EditProfilePage />} />
-          <Route path="/Register" element={<Register />} />
+          <Route path="/Addproduct" element={<Addproduct />} />
           <Route element={<Sidebarlayout />}>
             <Route path="/Product" element={<Product />} />
             <Route path="/Dashboard" element={<Dashboard />} />

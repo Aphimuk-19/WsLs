@@ -51,7 +51,7 @@ const Login = () => {
         message.success("ล็อกอินสำเร็จ! กำลังเปลี่ยนหน้า...");
         setTimeout(() => {
           navigate("/Dashboard");
-        }, 1500); // ปรับกลับเป็น 1500ms ให้เท่ากับ Register
+        }, 1500);
       } else {
         setError("ไม่ได้รับ token จาก API");
         message.error("ไม่ได้รับ token จาก API");
@@ -113,7 +113,7 @@ const Login = () => {
                 ลงทะเบียน
               </Link>
               <p>หรือ</p>
-              <Link to="/PasswordResetLink" className="text-[#1565f9]">
+              <Link to="/forgot-password" className="text-[#1565f9]"> {/* แก้ไขที่นี่ */}
                 ลืมรหัสผ่าน?
               </Link>
             </div>

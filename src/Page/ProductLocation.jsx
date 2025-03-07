@@ -1,6 +1,7 @@
 import React, { useContext, useRef, useEffect, useState } from "react";
 import { LocationContext } from "../Context/LocationContext";
 import { PlusCircleOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom"; // เพิ่มการนำทาง
 
 const data = [
   {
@@ -11,7 +12,7 @@ const data = [
     name: "ASUS VIVOBOOK",
     image:
       "https://www.jib.co.th/img_master/product/medium/20240409150821_66703_287_1.jpg?v=667031724752095",
-    location: "A-04", // ปรับให้สอดคล้องกับ ${col}-${row}
+    location: "A-04",
     in: "01/01/68",
     end: "01/01/70",
     quantity: 20,
@@ -37,17 +38,18 @@ const ProductLocation = () => {
     handleCellStatusChange,
   } = useContext(LocationContext);
 
+  const navigate = useNavigate(); // เพิ่มตัวนำทาง
   const tableRef = useRef(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProductListModalOpen, setIsProductListModalOpen] = useState(false);
   const [isProductManageModalOpen, setIsProductManageModalOpen] = useState(false);
   const [billNumber, setBillNumber] = useState("");
   const [selectedOption, setSelectedOption] = useState("");
+  const [error, setError] = useState(""); // เพิ่ม state สำหรับข้อผิดพลาด
 
-  // คำนวณความกว้างคงที่ให้ตรงกับ Managelocation
-  const baseColumnWidth = 9; // ความกว้างพื้นฐานต่อคอลัมน์ (rem)
-  const gapWidth = 0.5; // gap-2 = 0.5rem
-  const paddingWidth = 1; // p-2 = 1rem
+  const baseColumnWidth = 9;
+  const gapWidth = 0.5;
+  const paddingWidth = 1;
   const columnWidth = `${baseColumnWidth}rem`;
   const totalWidth = `${columns.length * baseColumnWidth + (columns.length > 1 ? (columns.length - 1) * gapWidth : 0) + paddingWidth}rem`;
 
@@ -62,16 +64,28 @@ const ProductLocation = () => {
   }, [setSelectedCell]);
 
   const handleButtonClick = () => setIsModalOpen(true);
+
   const handleSubmit = () => {
+    // ตรวจสอบเงื่อนไข: ต้องมี 8 ตัวอักษร
+    if (billNumber.length !== 8) {
+      setError("เลขที่บิลสินค้าต้องมี 8 ตัวอักษร");
+      return;
+    }
+
+    setError(""); // ล้างข้อผิดพลาดถ้าผ่านเงื่อนไข
     console.log("Bill Number:", billNumber);
     setBillNumber("");
     setIsModalOpen(false);
-    setIsProductListModalOpen(true);
+    
+    navigate("/Addproduct", { state: { billNumber } });
   };
+
   const handleCancel = () => {
     setBillNumber("");
+    setError(""); // ล้างข้อผิดพลาดเมื่อยกเลิก
     setIsModalOpen(false);
   };
+
   const handleProductListCancel = () => setIsProductListModalOpen(false);
   const handleProductListNext = () => {
     setIsProductListModalOpen(false);
@@ -95,7 +109,7 @@ const ProductLocation = () => {
         </button>
       </div>
 
-      {/* Modals */}
+      {/* Modal กรอกเลขที่บิล */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
           <div className="bg-white p-8 rounded-lg shadow-xl w-[450px]">
@@ -103,82 +117,27 @@ const ProductLocation = () => {
             <input
               type="text"
               value={billNumber}
-              onChange={(e) => setBillNumber(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-[#006ec4] transition-all"
+              onChange={(e) => {
+                setBillNumber(e.target.value);
+                setError(""); // ล้างข้อผิดพลาดเมื่อพิมพ์
+              }}
+              className={`w-full p-3 border ${error ? "border-red-500" : "border-gray-300"} rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-[#006ec4] transition-all`}
               placeholder="เลขที่บิลสินค้า"
             />
+            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
             <div className="flex justify-end gap-4">
-              <button onClick={handleCancel} className="px-5 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-700 font-medium transition-all">
+              <button
+                onClick={handleCancel}
+                className="px-5 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-700 font-medium transition-all"
+              >
                 ยกเลิก
               </button>
-              <button onClick={handleSubmit} className="px-5 py-2 bg-[#006ec4] text-white rounded-lg hover:bg-[#006ec4] hover:brightness-110 font-medium transition-all">
+              <button
+                onClick={handleSubmit}
+                className="px-5 py-2 bg-[#006ec4] text-white rounded-lg hover:bg-[#006ec4] hover:brightness-110 font-medium transition-all"
+              >
                 ตกลง
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isProductListModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-[700px] border-4 border-blue-500">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Product list</h2>
-              <button className="text-gray-500 hover:text-gray-700" onClick={handleProductListCancel}>✕</button>
-            </div>
-            <div className="flex justify-between text-sm mb-4 text-gray-700">
-              <span>ใบเสร็จ {billNumber || "84047"}</span>
-              <span>จำนวน 1 ลัง 2568</span>
-            </div>
-            <div className="border border-black">
-              <div className="grid grid-cols-5 gap-0 py-2 bg-black text-white text-center font-bold">
-                <span>ลำดับ</span>
-                <span>รหัสสินค้า</span>
-                <span>ประเภท</span>
-                <span>ชื่อ</span>
-                <span>จำนวน</span>
-              </div>
-              {productListData.map((item) => (
-                <div key={item.no} className="grid grid-cols-5 gap-0 py-2 text-center">
-                  <span>{item.no}</span>
-                  <span>{item.code}</span>
-                  <span>{item.type}</span>
-                  <span>{item.name}</span>
-                  <span>{item.quantity}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end gap-4 mt-4">
-              <button onClick={handleProductListCancel} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-gray-700 font-medium">cancel</button>
-              <button onClick={handleProductListNext} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 font-medium">Next</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isProductManageModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-[500px] border-4 border-blue-500">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Product manage</h2>
-              <button className="text-gray-500 hover:text-gray-700" onClick={handleProductManageCancel}>✕</button>
-            </div>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select an option:</label>
-              <select
-                value={selectedOption}
-                onChange={handleOptionChange}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006ec4] transition-all"
-              >
-                <option value="">-- Please select --</option>
-                <option value="option1">Option 1</option>
-                <option value="option2">Option 2</option>
-                <option value="option3">Option 3</option>
-              </select>
-            </div>
-            <div className="flex justify-end gap-4">
-              <button onClick={handleProductManageCancel} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-gray-700 font-medium">Cancel</button>
-              <button onClick={handleProductManageCancel} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 font-medium">Submit</button>
             </div>
           </div>
         </div>
@@ -203,7 +162,7 @@ const ProductLocation = () => {
             {rows.map((row) => (
               <React.Fragment key={row}>
                 {columns.map((col) => {
-                  const cellId = `${col}-${row}`; // เปลี่ยนเป็น ${col}-${row}
+                  const cellId = `${col}-${row}`;
                   const cell = newCells[col]?.find((c) => c.row === row);
                   const isDisabled = cellStatus[cellId] === "disabled";
                   const hasSubCells = cell?.subCells?.length > 0;
@@ -223,7 +182,7 @@ const ProductLocation = () => {
                           <div
                             key={subCell.id}
                             className={`h-16 flex-1 ${isDisabled ? "bg-[#121212]/75 text-white" : "bg-green-500"} border border-gray-200 rounded-sm flex items-center justify-center relative`}
-                            style={{ width: `${baseColumnWidth / 2 - 0.5}rem` }} // ปรับให้พอดีกับ subCells
+                            style={{ width: `${baseColumnWidth / 2 - 0.5}rem` }}
                           >
                             <div>{subCell.id}</div>
                             <div className="absolute bottom-0 left-0 w-full text-center text-xs">
@@ -233,7 +192,7 @@ const ProductLocation = () => {
                         ))
                       ) : (
                         <>
-                          <div className="flex items-center justify-center h-full w-full">{col}-{row}</div> {/* เปลี่ยนเป็น ${col}-${row} */}
+                          <div className="flex items-center justify-center h-full w-full">{col}-{row}</div>
                           {cell && (
                             <div className="absolute bottom-0 left-0 w-full text-center text-xs">
                               Capacity: {cell.capacity}
@@ -260,10 +219,7 @@ const ProductLocation = () => {
             ))}
           </div>
 
-          <div
-            className="flex mt-2 px-2 gap-2" // เพิ่ม gap-2 ให้ตรงกับตาราง
-            style={{ width: totalWidth }}
-          >
+          <div className="flex mt-2 px-2 gap-2" style={{ width: totalWidth }}>
             {columns.map((col) => (
               <div
                 key={col}
@@ -295,7 +251,10 @@ const ProductLocation = () => {
       <div className="h-[325px] bg-white border border-black/50 mt-7 mx-auto py-4 px-6">
         <div className="flex items-center">
           <p className="opacity-70 text-black text-lg font-bold">สินค้าใน</p>
-          <input className="w-[65px] h-[25px] bg-[#d9d9d9]/50 border border-black ml-2" type="text" />
+          <input
+            className="w-[65px] h-[25px] bg-[#d9d9d9]/50 border border-black ml-2"
+            type="text"
+          />
         </div>
         <div className="px-4 p-4 w-full h-[60px] mb-4">
           <div className="flex gap-6">

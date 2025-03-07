@@ -41,7 +41,6 @@ const PasswordResetLink = () => {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md overflow-hidden">
         <div className="px-6 py-8">
-          {/* โลโก้ */}
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
               <svg
@@ -62,7 +61,6 @@ const PasswordResetLink = () => {
           </div>
 
           {isSuccess ? (
-            // หน้าสำเร็จ
             <div className="text-center">
               <svg
                 className="mx-auto h-12 w-12 text-green-500"
@@ -83,10 +81,11 @@ const PasswordResetLink = () => {
               </h2>
               <p className="mt-2 text-sm text-gray-600">
                 เราได้ส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปยัง {email} แล้ว
-                กรุณาตรวจสอบอีเมลของคุณและคลิกที่ลิงก์เพื่อดำเนินการต่อ
+                <br />
+                กรุณาตรวจสอบอีเมลของคุณและคลิกที่ลิงก์เพื่อตั้งรหัสผ่านใหม่
               </p>
               <p className="mt-6 text-sm text-gray-600">
-                ลิงก์จะหมดอายุภายใน 30 นาที
+                ลิงก์จะหมดอายุภายใน 24 ชั่วโมง
               </p>
               <div className="mt-6 border-t border-gray-200 pt-6">
                 <p className="text-sm text-gray-600 mb-3">ไม่ได้รับอีเมล?</p>
@@ -102,13 +101,13 @@ const PasswordResetLink = () => {
               </div>
             </div>
           ) : (
-            // หน้าฟอร์ม
             <>
               <h2 className="text-center text-2xl font-bold text-gray-800 mb-2">
                 ลืมรหัสผ่าน
               </h2>
               <p className="text-center text-sm text-gray-600 mb-8">
                 กรุณากรอกอีเมลที่ใช้ลงทะเบียน
+                <br />
                 เราจะส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปให้คุณ
               </p>
 
@@ -176,7 +175,6 @@ const PasswordResetLink = () => {
             </>
           )}
 
-          {/* ลิงก์กลับไปหน้าล็อกอิน */}
           <div className="mt-6 text-center">
             <Link
               to="/Login"

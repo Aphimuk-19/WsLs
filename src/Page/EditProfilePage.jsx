@@ -22,7 +22,7 @@ const EditProfilePage = () => {
   });
   const [initialData, setInitialData] = useState(null);
   const [profileImageFile, setProfileImageFile] = useState(null);
-  const [profileImageUrl, setProfileImageUrl] = useState('/api/placeholder/120/120');
+  const [profileImageUrl, setProfileImageUrl] = useState(null); // เปลี่ยนค่าเริ่มต้นเป็น null
   const [isSaved, setIsSaved] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -59,7 +59,7 @@ const EditProfilePage = () => {
         employeeId: userData.employeeId || '',
         role: userData.role || '',
       });
-      setProfileImageUrl(userData.profilePicture || '/api/placeholder/120/120');
+      setProfileImageUrl(userData.profilePicture || null); // ถ้าไม่มีรูปให้เป็น null
       setInitialData(userData);
     } else if (currentUser && !userId) {
       setFormData({
@@ -71,7 +71,7 @@ const EditProfilePage = () => {
         employeeId: currentUser.employeeId || '',
         role: currentUser.role || '',
       });
-      setProfileImageUrl(currentUser.profilePicture || '/api/placeholder/120/120');
+      setProfileImageUrl(currentUser.profilePicture || null); // ถ้าไม่มีรูปให้เป็น null
       setInitialData(currentUser);
     } else if (userId && currentUser) {
       if (!userData) {
@@ -128,8 +128,6 @@ const EditProfilePage = () => {
       formDataToSend.append('department', formData.department);
       formDataToSend.append('email', formData.email);
       formDataToSend.append('phoneNumber', formData.phone);
-      // ไม่ส่ง employeeId เพราะไม่ต้องการให้แก้ไข
-
       if (currentUser.role === 'admin' && userId) {
         formDataToSend.append('role', formData.role);
       }
@@ -168,7 +166,7 @@ const EditProfilePage = () => {
         employeeId: updatedData.employeeId || '',
         role: updatedData.role || '',
       });
-      setProfileImageUrl(updatedData.profilePicture || profileImageUrl);
+      setProfileImageUrl(updatedData.profilePicture || null);
       setProfileImageFile(null);
       setIsSaved(true);
 
@@ -202,6 +200,9 @@ const EditProfilePage = () => {
 
   if (!currentUser) return <div>Loading...</div>;
 
+  // ดึงอักษรตัวแรกของชื่อ
+  const initial = formData.firstName ? formData.firstName.charAt(0).toUpperCase() : '';
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -217,11 +218,19 @@ const EditProfilePage = () => {
             <div className="px-6 py-6">
               <div className="flex flex-col items-center mb-8">
                 <div className="relative mb-4">
-                  <img
-                    src={profileImageUrl}
-                    alt="รูปโปรไฟล์"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md"
-                  />
+                  {profileImageUrl ? (
+                    <img
+                      src={profileImageUrl}
+                      alt="รูปโปรไฟล์"
+                      className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md"
+                    />
+                  ) : (
+                    <div
+                      className="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center text-white text-4xl font-bold border-4 border-white shadow-md"
+                    >
+                      {initial}
+                    </div>
+                  )}
                   <input
                     type="file"
                     id="profileImage"
@@ -260,7 +269,7 @@ const EditProfilePage = () => {
                     name="employeeId"
                     value={formData.employeeId}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100"
-                    disabled // ตั้งให้ไม่สามารถแก้ไขได้
+                    disabled
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

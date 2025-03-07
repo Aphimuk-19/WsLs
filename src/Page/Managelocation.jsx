@@ -36,7 +36,7 @@ const Managelocation = () => {
 
   const tableRef = useRef(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [dropdownCell, setDropdownCell] = useState(null); // State สำหรับ cell ที่แสดง dropdown
+  const [dropdownCell, setDropdownCell] = useState(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -49,7 +49,7 @@ const Managelocation = () => {
       ) {
         setSelectedCell(null);
         setIsChoosingToSplit(false);
-        setDropdownCell(null); // ปิด dropdown เมื่อคลิกนอกตาราง
+        setDropdownCell(null);
       }
     };
     document.addEventListener("click", handleClickOutside);
@@ -70,7 +70,6 @@ const Managelocation = () => {
 
   const handleAddSingleCellWithCapacity = () => {
     if (!selectedCell) return;
-
     setIsTransitioning(true);
     handleAddSingleCell();
     setIsChoosingToSplit(false);
@@ -82,7 +81,6 @@ const Managelocation = () => {
 
   const handleSplitCellWithCapacity = () => {
     if (!selectedCell) return;
-
     setIsTransitioning(true);
     handleSplitCell();
     setIsChoosingToSplit(false);
@@ -95,14 +93,12 @@ const Managelocation = () => {
   const handleCellClickWithDropdown = (row, col) => {
     const cellId = `${col}-${row}`;
     const cell = newCells[col]?.find((c) => c.row === row);
-
     handleCellClick(row, col);
-
-    // ถ้า cell เป็นสีเขียวและมี capacity ให้แสดง dropdown
-    if (cell && isCapacitySet[cellId] && cellStatus[cellId] !== "disabled") {
+    // แสดง dropdown ถ้า cell มี capacity และไม่ถูกปิดใช้งาน หรือถูกปิดใช้งานแล้วเพื่อให้เปลี่ยนกลับได้
+    if (cell && isCapacitySet[cellId]) {
       setDropdownCell(cellId);
     } else {
-      setDropdownCell(null); // ปิด dropdown ถ้าไม่เข้าเงื่อนไข
+      setDropdownCell(null);
     }
   };
 
@@ -138,17 +134,14 @@ const Managelocation = () => {
 
     const handleCapacitySave = (e) => {
       e.stopPropagation();
-
       const capacity1 = Number(localCapacity1);
       const capacity2 = Number(localCapacity2);
       console.log("Saving capacity:", { capacity1, capacity2, selectedCell });
-
       if (hasSubCells) {
         handleSetSubCellCapacity(selectedCell, capacity1, capacity2);
       } else {
         handleSetSingleCellCapacity(selectedCell, capacity1);
       }
-
       setIsCapacitySet((prev) => ({ ...prev, [selectedCell]: true }));
       setIsSettingCapacity(false);
       setSelectedCell(null);
@@ -175,7 +168,6 @@ const Managelocation = () => {
           <p className="text-sm mb-2">
             {hasSubCells ? "กำหนดขนาด Capacity สำหรับเซลล์ย่อย:" : "กำหนดขนาด Capacity:"}
           </p>
-
           {hasSubCells ? (
             <div className="flex space-x-4 mb-4">
               <input
@@ -207,7 +199,6 @@ const Managelocation = () => {
               max="10"
             />
           )}
-
           <button
             onClick={handleCapacitySave}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -245,7 +236,6 @@ const Managelocation = () => {
                 <option value={4}>4 เซลล์</option>
               </select>
             </div>
-
             <div className="flex flex-col">
               <label className="text-sm mb-1">ความจุต่อเซลล์</label>
               <input
@@ -257,7 +247,6 @@ const Managelocation = () => {
                 max="10"
               />
             </div>
-
             <div className="flex flex-col">
               <label className="text-sm mb-1">จำนวนเซลล์ย่อย</label>
               <select
@@ -269,7 +258,6 @@ const Managelocation = () => {
                 <option value={2}>2 เซลล์ย่อย</option>
               </select>
             </div>
-
             <button
               onClick={handleAddColumn}
               className="h-[37px] px-4 py-2 bg-[#006ec4] rounded justify-center items-center gap-[7.92px] inline-flex text-white text-[15px] font-light leading-[19px] hover:bg-[#006ec4] hover:brightness-110 hover:shadow-md self-end"
@@ -278,7 +266,6 @@ const Managelocation = () => {
               Add Location
             </button>
           </div>
-
           <div className="relative">
             <div className="flex overflow-x-auto">
               <div className="flex flex-col justify-between mr-4 pt-1 shrink-0">
@@ -288,7 +275,6 @@ const Managelocation = () => {
                   </div>
                 ))}
               </div>
-
               <div className="flex-1 flex flex-col" ref={tableRef}>
                 <div
                   className="grid gap-2 border border-gray-200 rounded-md bg-white p-2 box-border"
@@ -328,7 +314,6 @@ const Managelocation = () => {
                                 >
                                   <div>{subCell.id}</div>
                                   <div className="absolute bottom-0 left-0 w-full text-center text-xs">
-                                    {console.log(`Rendering subCell ${subCell.id} capacity:`, subCell.capacity)}
                                     Capacity: {subCell.capacity}
                                   </div>
                                 </div>
@@ -338,14 +323,12 @@ const Managelocation = () => {
                                 <div className="flex items-center justify-center h-full w-full">{col}-{row}</div>
                                 {cell && (
                                   <div className="absolute bottom-0 left-0 w-full text-center text-xs">
-                                    {console.log(`Rendering cell ${cellId} capacity:`, cell.capacity)}
                                     Capacity: {cell.capacity}
                                   </div>
                                 )}
                               </>
                             )}
-
-                            {/* Dropdown */}
+                            {/* ปรับ dropdown ให้มีตัวเลือกทั้งปิดและเปิดใช้งาน */}
                             {isDropdownOpen && (
                               <div className="absolute z-10 top-16 left-0 bg-white border border-gray-300 rounded shadow-md">
                                 <select
@@ -354,8 +337,11 @@ const Managelocation = () => {
                                   className="p-2 w-32"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <option value="" disabled>เลือกสถานะ</option>
+                                  <option value="" disabled>
+                                    เลือกสถานะ
+                                  </option>
                                   <option value="disabled">ปิดการใช้งาน</option>
+                                  <option value="enabled">เปิดใช้งาน</option>
                                 </select>
                               </div>
                             )}
@@ -365,7 +351,6 @@ const Managelocation = () => {
                     </React.Fragment>
                   ))}
                 </div>
-
                 <div
                   className="flex mt-2 px-2 gap-2"
                   style={{
@@ -388,7 +373,6 @@ const Managelocation = () => {
               </div>
             </div>
           </div>
-
           <Modal
             title="จัดการเซลล์"
             open={isChoosingToSplit}
@@ -425,9 +409,7 @@ const Managelocation = () => {
               </div>
             </div>
           </Modal>
-
           <CapacityModal />
-
           <div className="flex items-center justify-start mt-10 space-x-20 ml-[37px]">
             <div className="flex items-center">
               <div className="w-4 h-4 bg-[#0A8F08] border border-gray-200 rounded-full mr-2"></div>
