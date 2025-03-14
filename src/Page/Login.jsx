@@ -113,7 +113,7 @@ const Login = () => {
                 ลงทะเบียน
               </Link>
               <p>หรือ</p>
-              <Link to="/forgot-password" className="text-[#1565f9]"> {/* แก้ไขที่นี่ */}
+              <Link to="/PasswordResetLink" className="text-[#1565f9]"> {/* แก้ไขที่นี่ */}
                 ลืมรหัสผ่าน?
               </Link>
             </div>

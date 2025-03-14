@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBox,
@@ -9,6 +9,37 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const HeaderManageLocation = () => {
+  // สร้าง state เพื่อเก็บข้อมูลจาก API
+  const [summaryData, setSummaryData] = useState({
+    totalBoxes: 0,
+    activeBoxes: 0,
+    disabledBoxes: 0,
+  });
+
+  // ใช้ useEffect เพื่อดึงข้อมูลจาก API เมื่อ component โหลด
+  useEffect(() => {
+    const fetchSummaryData = async () => {
+      try {
+        const response = await fetch("http://172.18.43.37:3000/api/cell/summary");
+        const result = await response.json();
+        if (result.success) {
+          setSummaryData({
+            totalBoxes: result.data.totalBoxes,
+            activeBoxes: result.data.activeBoxes,
+            disabledBoxes: result.data.disabledBoxes,
+            inactiveBoxes: result.data.inactiveBoxes,
+          });
+        } else {
+          console.error("Failed to fetch summary:", result.error);
+        }
+      } catch (error) {
+        console.error("Error fetching summary data:", error);
+      }
+    };
+
+    fetchSummaryData();
+  }, []); // อาร์เรย์ว่างหมายถึงเรียกใช้แค่ครั้งเดียวเมื่อ component โหลด
+
   console.log("Rendering HeaderManageLocation"); // ตรวจสอบการ render
 
   return (
@@ -17,13 +48,7 @@ const HeaderManageLocation = () => {
       <div className="flex space-x-7 items-center justify-center mt-[40px]">
         {/* Total Box */}
         <div className="w-[268px] h-[116px] bg-white rounded-[10px] flex items-center justify-start p-5 shadow-sm">
-          <div
-            style={{
-              position: "relative",
-              width: "60px",
-              height: "60px",
-            }}
-          >
+          <div style={{ position: "relative", width: "60px", height: "60px" }}>
             <div
               style={{
                 position: "absolute",
@@ -45,14 +70,14 @@ const HeaderManageLocation = () => {
                 position: "absolute",
                 top: "50%",
                 left: "50%",
-                transform: "translate(-50%, -50%)", // จัดกึ่งกลาง
+                transform: "translate(-50%, -50%)",
                 zIndex: 1,
               }}
             />
           </div>
           <div className="p-6">
             <h1 className="opacity-70 text-[#030229] text-[22px] font-extrabold">
-              58
+              {summaryData.totalBoxes}
             </h1>
             <p className="opacity-70 text-[#030229] text-sm font-normal">
               Total Box
@@ -62,13 +87,7 @@ const HeaderManageLocation = () => {
 
         {/* Active Box */}
         <div className="w-[268px] h-[116px] bg-white rounded-[10px] flex items-center justify-start p-5 shadow-sm">
-          <div
-            style={{
-              position: "relative",
-              width: "60px",
-              height: "60px",
-            }}
-          >
+          <div style={{ position: "relative", width: "60px", height: "60px" }}>
             <div
               style={{
                 position: "absolute",
@@ -97,7 +116,7 @@ const HeaderManageLocation = () => {
           </div>
           <div className="p-6">
             <h1 className="opacity-70 text-[#030229] text-[22px] font-extrabold">
-              58
+              {summaryData.activeBoxes}
             </h1>
             <p className="opacity-70 text-[#030229] text-sm font-normal">
               Active Box
@@ -107,13 +126,7 @@ const HeaderManageLocation = () => {
 
         {/* Inactive Box */}
         <div className="w-[268px] h-[116px] bg-white rounded-[10px] flex items-center justify-start p-5 shadow-sm">
-          <div
-            style={{
-              position: "relative",
-              width: "60px",
-              height: "60px",
-            }}
-          >
+          <div style={{ position: "relative", width: "60px", height: "60px" }}>
             <div
               style={{
                 position: "absolute",
@@ -142,7 +155,7 @@ const HeaderManageLocation = () => {
           </div>
           <div className="p-6">
             <h1 className="opacity-70 text-[#030229] text-[22px] font-extrabold">
-              58
+            {summaryData.inactiveBoxes}
             </h1>
             <p className="opacity-70 text-[#030229] text-sm font-normal">
               Inactive Box
@@ -152,13 +165,7 @@ const HeaderManageLocation = () => {
 
         {/* Disabled Box */}
         <div className="w-[268px] h-[116px] bg-white rounded-[10px] flex items-center justify-start p-5 shadow-sm">
-          <div
-            style={{
-              position: "relative",
-              width: "60px",
-              height: "60px",
-            }}
-          >
+          <div style={{ position: "relative", width: "60px", height: "60px" }}>
             <div
               style={{
                 position: "absolute",
@@ -187,7 +194,7 @@ const HeaderManageLocation = () => {
           </div>
           <div className="p-6">
             <h1 className="opacity-70 text-[#030229] text-[22px] font-extrabold">
-              58
+              {summaryData.disabledBoxes}
             </h1>
             <p className="opacity-70 text-[#030229] text-sm font-normal">
               Disabled Box
@@ -197,13 +204,7 @@ const HeaderManageLocation = () => {
 
         {/* Lastupdate */}
         <div className="w-[268px] h-[116px] bg-white rounded-[10px] flex items-center justify-start p-5 shadow-sm">
-          <div
-            style={{
-              position: "relative",
-              width: "60px",
-              height: "60px",
-            }}
-          >
+          <div style={{ position: "relative", width: "60px", height: "60px" }}>
             <div
               style={{
                 position: "absolute",

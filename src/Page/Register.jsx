@@ -126,14 +126,20 @@ const Register = () => {
               onChange={handleSelectChange}
               value={formData.department}
               options={[
-                { value: "jack", label: "Jack" },
-                { value: "lucy", label: "Lucy" },
-                { value: "tom", label: "Tom" },
+                { value: "บัญชี", label: "บัญชี" },
+                { value: "คลังสินค้า", label: "คลังสินค้า" },
+                { value: "ธุรการ", label: "ธุรการ" },
+                { value: "ทรัพยากรบุคคล", label: "ทรัพยากรบุคคล" },
+                { value: "MIS", label: "MIS" },
+                { value: "MIT", label: "MIT" },
+                { value: "การตลาด", label: "การตลาด" },
+                { value: "จัดซื้อ", label: "จัดซื้อ" },
+                { value: "การเงิน", label: "การเงิน" },
               ]}
               className="input-style1"
             />
             <Input
-              name="employeeId"
+              name="employeeId" 
               placeholder="Employee ID"
               className="input-style1"
               value={formData.employeeId}
@@ -173,9 +179,9 @@ const Register = () => {
             <button
               className="w-[158.38px] h-[54px] bg-[#252265] rounded-[18.72px] text-white hover:bg-[#ffffff] hover:text-[#252265] flex items-center justify-center"
               onClick={handleSubmit}
-              disabled={!isFormValid() || loading} // ปิดปุ่มเมื่อกำลังโหลด
+              disabled={!isFormValid() || loading} 
             >
-              {loading ? <Spin size="small" /> : "Sign Up"} {/* แสดง Spin เมื่อโหลด */}
+              {loading ? <Spin size="small" /> : "Sign Up"} 
             </button>
           </div>
         </div>

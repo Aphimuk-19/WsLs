@@ -140,11 +140,10 @@ const Dashboard = () => {
                   </div>
                   <div className="flex-[3] flex items-center justify-center text-center">
                     <span
-                      className={
-                        item.Status === "เข้า"
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }
+                      className={`flex items-center justify-center text-white text-xs font-semibold px-2 py-1 rounded-full truncate ${
+                        item.Status === "เข้า" ? "bg-green-500" : "bg-red-500"
+                      }`}
+                      style={{ width: "60px" }}
                     >
                       {item.Status}
                     </span>

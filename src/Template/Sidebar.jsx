@@ -6,7 +6,7 @@ import {
   BellOutlined,
   PieChartOutlined,
   AppstoreOutlined,
-  ShoppingCartOutlined,
+  FileTextOutlined,
   DatabaseOutlined,
   UserOutlined,
   TeamOutlined,
@@ -75,7 +75,7 @@ const Sidebar = () => {
   useEffect(() => {
     const pathToPageMap = {
       "/Dashboard": "Dashboard",
-      "/Product": "Product",
+      "/Requisition": "Requisition",
       "/ProductLocation": "ProductLocation",
       "/Managelocation": "Managelocation",
       "/ManageUsers": "ManageUsers",
@@ -103,7 +103,7 @@ const Sidebar = () => {
   const handleMenuClick = ({ key }) => {
     const menuMap = {
       1: "Dashboard",
-      2: "Product",
+      2: "Requisition",
       3: "ProductLocation",
       4: "Managelocation",
       5: "ManageUsers",
@@ -124,7 +124,7 @@ const Sidebar = () => {
   const getSelectedKey = () => {
     const pageToKeyMap = {
       "Dashboard": "1",
-      "Product": "2",
+      "Requisition": "2",
       "ProductLocation": "3",
       "Managelocation": "4",
       "ManageUsers": "5",
@@ -142,7 +142,7 @@ const Sidebar = () => {
       disabled: true,
     },
     { key: "1", label: "Dashboard", icon: <PieChartOutlined /> },
-    { key: "2", label: "Product", icon: <ShoppingCartOutlined /> },
+    { key: "2", label: "Requisition", icon: <FileTextOutlined /> },
     { key: "3", label: "Product Location", icon: <AppstoreOutlined /> },
     { key: "4", label: "Manage Location", icon: <DatabaseOutlined /> },
     ...(userRole === "admin" ? [{ key: "5", label: "Manage User", icon: <TeamOutlined /> }] : []),
@@ -332,18 +332,6 @@ const Sidebar = () => {
                   <DownOutlined className="ml-2" style={{ fontSize: "10px" }} />
                 </Space>
               </a>
-            </Dropdown>
-
-            <Dropdown overlay={notificationMenu} trigger={["click"]}>
-              <Badge count={notifications.length} offset={[10, 0]}>
-                <BellOutlined
-                  style={{
-                    fontSize: "20px",
-                    color: "#1f384c",
-                    cursor: "pointer",
-                  }}
-                />
-              </Badge>
             </Dropdown>
           </div>
         </Header>

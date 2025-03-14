@@ -1,7 +1,7 @@
 import React, { useContext, useRef, useEffect, useState } from "react";
 import { LocationContext } from "../Context/LocationContext";
-import { PlusCircleOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom"; // เพิ่มการนำทาง
+import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 const data = [
   {
@@ -38,20 +38,23 @@ const ProductLocation = () => {
     handleCellStatusChange,
   } = useContext(LocationContext);
 
-  const navigate = useNavigate(); // เพิ่มตัวนำทาง
+  const navigate = useNavigate();
   const tableRef = useRef(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isProductListModalOpen, setIsProductListModalOpen] = useState(false);
-  const [isProductManageModalOpen, setIsProductManageModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [billNumber, setBillNumber] = useState("");
-  const [selectedOption, setSelectedOption] = useState("");
-  const [error, setError] = useState(""); // เพิ่ม state สำหรับข้อผิดพลาด
+  const [error, setError] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const baseColumnWidth = 9;
   const gapWidth = 0.5;
   const paddingWidth = 1;
   const columnWidth = `${baseColumnWidth}rem`;
-  const totalWidth = `${columns.length * baseColumnWidth + (columns.length > 1 ? (columns.length - 1) * gapWidth : 0) + paddingWidth}rem`;
+  const totalWidth = `${
+    columns.length * baseColumnWidth +
+    (columns.length > 1 ? (columns.length - 1) * gapWidth : 0) +
+    paddingWidth
+  }rem`;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -66,36 +69,32 @@ const ProductLocation = () => {
   const handleButtonClick = () => setIsModalOpen(true);
 
   const handleSubmit = () => {
-    // ตรวจสอบเงื่อนไข: ต้องมี 8 ตัวอักษร
     if (billNumber.length !== 8) {
       setError("เลขที่บิลสินค้าต้องมี 8 ตัวอักษร");
       return;
     }
-
-    setError(""); // ล้างข้อผิดพลาดถ้าผ่านเงื่อนไข
+    setError("");
     console.log("Bill Number:", billNumber);
     setBillNumber("");
     setIsModalOpen(false);
-    
     navigate("/Addproduct", { state: { billNumber } });
   };
 
   const handleCancel = () => {
     setBillNumber("");
-    setError(""); // ล้างข้อผิดพลาดเมื่อยกเลิก
+    setError("");
     setIsModalOpen(false);
   };
 
-  const handleProductListCancel = () => setIsProductListModalOpen(false);
-  const handleProductListNext = () => {
-    setIsProductListModalOpen(false);
-    setIsProductManageModalOpen(true);
+  const handleSearchClick = (product) => {
+    setSelectedProduct(product);
+    setIsSearchModalOpen(true);
   };
-  const handleProductManageCancel = () => {
-    setIsProductManageModalOpen(false);
-    setSelectedOption("");
+
+  const handleSearchModalClose = () => {
+    setIsSearchModalOpen(false);
+    setSelectedProduct(null);
   };
-  const handleOptionChange = (e) => setSelectedOption(e.target.value);
 
   return (
     <div className="p-4 max-w-6xl mx-auto w-full mt-[30px]">
@@ -113,15 +112,19 @@ const ProductLocation = () => {
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
           <div className="bg-white p-8 rounded-lg shadow-xl w-[450px]">
-            <h2 className="text-xl font-bold mb-6 text-gray-800">กรุณาใส่เลขที่บิลสินค้า</h2>
+            <h2 className="text-xl font-bold mb-6 text-gray-800">
+              กรุณาใส่เลขที่บิลสินค้า
+            </h2>
             <input
               type="text"
               value={billNumber}
               onChange={(e) => {
                 setBillNumber(e.target.value);
-                setError(""); // ล้างข้อผิดพลาดเมื่อพิมพ์
+                setError("");
               }}
-              className={`w-full p-3 border ${error ? "border-red-500" : "border-gray-300"} rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-[#006ec4] transition-all`}
+              className={`w-full p-3 border ${
+                error ? "border-red-500" : "border-gray-300"
+              } rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-[#006ec4] transition-all`}
               placeholder="เลขที่บิลสินค้า"
             />
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
@@ -147,7 +150,12 @@ const ProductLocation = () => {
       <div className="flex overflow-x-auto">
         <div className="flex flex-col justify-between mr-4 pt-1">
           {rows.map((row) => (
-            <div key={row} className="h-16 flex items-center text-gray-600 text-sm">{row}</div>
+            <div
+              key={row}
+              className="h-16 flex items-center text-gray-600 text-sm"
+            >
+              {row}
+            </div>
           ))}
         </div>
 
@@ -173,7 +181,13 @@ const ProductLocation = () => {
                       className={`h-16 ${
                         hasSubCells
                           ? "flex space-x-2 bg-transparent"
-                          : `${cell ? (isDisabled ? "bg-[#121212]/75 text-white" : "bg-green-500") : "bg-gray-50"} border border-gray-200 rounded-sm hover:bg-gray-100`
+                          : `${
+                              cell
+                                ? isDisabled
+                                  ? "bg-[#121212]/75 text-white"
+                                  : "bg-green-500"
+                                : "bg-gray-50"
+                            } border border-gray-200 rounded-sm hover:bg-gray-100`
                       } relative`}
                       onClick={() => handleCellClick(row, col)}
                     >
@@ -181,27 +195,27 @@ const ProductLocation = () => {
                         cell.subCells.map((subCell) => (
                           <div
                             key={subCell.id}
-                            className={`h-16 flex-1 ${isDisabled ? "bg-[#121212]/75 text-white" : "bg-green-500"} border border-gray-200 rounded-sm flex items-center justify-center relative`}
+                            className={`h-16 flex-1 ${
+                              isDisabled
+                                ? "bg-[#121212]/75 text-white"
+                                : "bg-green-500"
+                            } border border-gray-200 rounded-sm flex items-center justify-center relative`}
                             style={{ width: `${baseColumnWidth / 2 - 0.5}rem` }}
                           >
-                            <div>{subCell.id}</div>
-                            <div className="absolute bottom-0 left-0 w-full text-center text-xs">
-                              Capacity: {subCell.capacity}
-                            </div>
+                            <div>{subCell.id.split("-")[2]}</div>
                           </div>
                         ))
                       ) : (
                         <>
-                          <div className="flex items-center justify-center h-full w-full">{col}-{row}</div>
-                          {cell && (
-                            <div className="absolute bottom-0 left-0 w-full text-center text-xs">
-                              Capacity: {cell.capacity}
-                            </div>
-                          )}
+                          <div className="flex items-center justify-center h-full w-full">
+                            {col}-{row}
+                          </div>
                           {cell && !isDisabled && selectedCell === cellId && (
                             <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white opacity-90 z-10">
                               <select
-                                onChange={(e) => handleCellStatusChange(cellId, e.target.value)}
+                                onChange={(e) =>
+                                  handleCellStatusChange(cellId, e.target.value)
+                                }
                                 className="p-2 border rounded"
                                 defaultValue=""
                               >
@@ -239,8 +253,8 @@ const ProductLocation = () => {
           <span className="text-sm">พื้นที่ว่าง</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-[#F2383A] border border-gray-200 rounded-full mr-2"></div>
-          <span className="text-sm">พื้นที่ไม่ว่าง</span>
+          <div className="w-4 h-4 bg-[#f2383a] border border-gray-200 rounded-full mr-2"></div>
+          <span className="text-sm">เปิดใช้งาน</span>
         </div>
         <div className="flex items-center">
           <div className="w-4 h-4 bg-[#121212]/75 border border-gray-200 rounded-full mr-2"></div>
@@ -258,14 +272,28 @@ const ProductLocation = () => {
         </div>
         <div className="px-4 p-4 w-full h-[60px] mb-4">
           <div className="flex gap-6">
-            <p className="w-[100px] flex items-center justify-center text-center">No</p>
-            <p className="w-[150px] flex items-center justify-center text-center">ID</p>
-            <p className="w-[120px] flex items-center justify-center text-center">Type</p>
-            <p className="w-[200px] flex items-center justify-center text-center">Name</p>
-            <p className="w-[130px] flex items-center justify-center text-center">Location</p>
-            <p className="w-[120px] flex items-center justify-center text-center">In</p>
-            <p className="w-[120px] flex items-center justify-center text-center">End</p>
-            <p className="w-[150px] flex items-center justify-center text-center">Status</p>
+            <p className="w-[100px] flex items-center justify-center text-center">
+              No
+            </p>
+            <p className="w-[150px] flex items-center justify-center text-center">
+              ID
+            </p>
+            <p className="w-[120px] flex items-center justify-center text-center">
+              Type
+            </p>
+            <p className="w-[200px] flex items-center justify-center text-center">
+              Name
+            </p>
+            <p className="w-[130px] flex items-center justify-center text-center">
+              Location
+            </p>
+            <p className="w-[120px] flex items-center justify-center text-center">
+              In
+            </p>
+            <p className="w-[120px] flex items-center justify-center text-center">
+              End
+            </p>
+            <p className="w-[150px] flex items-center justify-center text-center"></p>
           </div>
         </div>
         {data.map((item) => (
@@ -274,21 +302,91 @@ const ProductLocation = () => {
             className="px-4 p-4 w-full h-[70px] mb-4 bg-white rounded-[13.05px] shadow-[1.3054757118225098px_22.193086624145508px_57.4409294128418px_0px_rgba(3,2,41,0.07)]"
           >
             <div className="flex gap-6">
-              <div className="w-[100px] flex items-center justify-center text-center">{item.no}</div>
-              <div className="w-[150px] flex items-center justify-center text-center">{item.id}</div>
-              <div className="w-[120px] flex items-center justify-center text-center">{item.type}</div>
+              <div className="w-[100px] flex items-center justify-center text-center">
+                {item.no}
+              </div>
+              <div className="w-[150px] flex items-center justify-center text-center">
+                {item.id}
+              </div>
+              <div className="w-[120px] flex items-center justify-center text-center">
+                {item.type}
+              </div>
               <div className="w-[200px] flex items-center justify-center text-center">
-                <img src={item.image} alt={item.name} className="w-10 h-10 rounded-full mr-2" />
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-10 h-10 rounded-full mr-2"
+                />
                 {item.name}
               </div>
-              <div className="w-[130px] flex items-center justify-center text-center">{item.location}</div>
-              <div className="w-[120px] flex items-center justify-center text-center">{item.in}</div>
-              <div className="w-[120px] flex items-center justify-center text-center">{item.end}</div>
-              <div className="w-[150px] flex items-center justify-center text-center">Succes</div>
+              <div className="w-[130px] flex items-center justify-center text-center">
+                {item.location}
+              </div>
+              <div className="w-[120px] flex items-center justify-center text-center">
+                {item.in}
+              </div>
+              <div className="w-[120px] flex items-center justify-center text-center">
+                {item.end}
+              </div>
+              <div
+                className="w-[150px] flex items-center justify-center text-center cursor-pointer hover:text-blue-500"
+                onClick={() => handleSearchClick(item)}
+              >
+                <SearchOutlined className="text-xl" />
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      {isSearchModalOpen && selectedProduct && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-[450px] max-h-[400px] overflow-y-auto">
+            <div className="flex flex-col gap-4">
+              {/* Image and Product Info */}
+              <div className="flex gap-4">
+                <img
+                  src={selectedProduct.image}
+                  alt={selectedProduct.name}
+                  className="w-[150px] h-[150px] object-contain"
+                />
+                <div className="flex flex-col justify-center">
+                  <p className="text-lg font-semibold">
+                    Name: {selectedProduct.name}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Type: {selectedProduct.type}
+                  </p>
+                </div>
+              </div>
+              {/* Location Section */}
+              <div className="border-t pt-4">
+                <p className="font-semibold mb-2">Location ที่ตั้งสินค้า:</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Location A1</span>
+                    <span className="text-green-600">จำนวน 5 ชิ้น</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Location B1</span>
+                    <span className="text-green-600">จำนวน 5 ชิ้น</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button (ย้ายมาด้านล่างสุด) */}
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={handleSearchModalClose}
+                  className="px-6 py-2 bg-gray-200 rounded-full hover:bg-gray-300 text-gray-700 font-medium transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
