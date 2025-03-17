@@ -96,26 +96,22 @@ const DashboardLocationView = () => {
         ))}
       </div>
       <div className="flex items-center justify-start mt-2 space-x-10 ml-[20px]">
-        <div className="flex items-center">
-          <div className="w-3 h-3 bg-white border border-gray-200 rounded-full mr-1"></div>
-          <span className="text-xs">ไม่ใช้งาน</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 bg-green-500 border border-gray-200 rounded-full mr-1"></div>
-          <span className="text-xs">ใช้งาน</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 bg-red-500 border border-gray-200 rounded-full mr-1"></div>
-          <span className="text-xs">ซ่อมบำรุง</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 bg-gray-500 border border-gray-200 rounded-full mr-1"></div>
-          <span className="text-xs">จอง</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 bg-[#121212]/75 border border-gray-200 rounded-full mr-1"></div>
-          <span className="text-xs">ปิดการใช้งาน</span>
-        </div>
+      <div className="flex items-center">
+                  <div className="w-4 h-4 bg-white border border-gray-200 rounded-full mr-2"></div>
+                  <span className="text-sm">(ว่าง)</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-green-500 border border-gray-200 rounded-full mr-2"></div>
+                  <span className="text-sm">(ใช้งาน)</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-red-500 border border-gray-200 rounded-full mr-2"></div>
+                  <span className="text-sm">(เต็ม)</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-gray-500 border border-gray-200 rounded-full mr-2"></div>
+                  <span className="text-sm">(ปิดการใช้งาน)</span>
+                </div>
       </div>
     </div>
   );

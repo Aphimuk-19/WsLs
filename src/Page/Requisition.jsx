@@ -1,7 +1,66 @@
 import React, { useState } from "react";
-import { Input, Button } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+import { Button, Input, Space } from "antd";
+import { SearchOutlined, FilterOutlined } from "@ant-design/icons";
+const { Search } = Input;
 
+// CustomInputNumber component (unchanged)
+const CustomInputNumber = ({
+  value = 0,
+  onChange,
+  min = 0,
+  max = Infinity,
+}) => {
+  const [inputValue, setInputValue] = useState(value);
+
+  const handleIncrement = () => {
+    if (inputValue < max) {
+      const newValue = inputValue + 1;
+      setInputValue(newValue);
+      if (onChange) onChange(newValue);
+    }
+  };
+
+  const handleDecrement = () => {
+    if (inputValue > min) {
+      const newValue = inputValue - 1;
+      setInputValue(newValue);
+      if (onChange) onChange(newValue);
+    }
+  };
+
+  const handleChange = (e) => {
+    const newValue = parseInt(e.target.value) || 0;
+    if (newValue >= min && newValue <= max) {
+      setInputValue(newValue);
+      if (onChange) onChange(newValue);
+    }
+  };
+
+  return (
+    <div className="flex items-center w-[80px] h-[30px] border border-gray-300 rounded-md overflow-hidden mx-auto">
+      <button
+        onClick={handleDecrement}
+        className="w-[25px] h-full flex items-center justify-center bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors"
+      >
+        -
+      </button>
+      <input
+        value={inputValue}
+        onChange={handleChange}
+        className="w-[30px] h-full text-center border-none focus:outline-none"
+        type="number"
+      />
+      <button
+        onClick={handleIncrement}
+        className="w-[25px] h-full flex items-center justify-center bg-gray-200 text-gray-600 hover:bg-gray-300 transition-colors"
+      >
+        +
+      </button>
+    </div>
+  );
+};
+
+// Sample data (unchanged)
 const data = [
   {
     key: "1",
@@ -45,167 +104,136 @@ const data = [
 ];
 
 const Requisition = () => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [quantities, setQuantities] = useState(data.map(() => 0));
+  const [searchTerm, setSearchTerm] = useState("");
   const [filteredData, setFilteredData] = useState(data);
-  const [selectedQuantities, setSelectedQuantities] = useState(
-    data.reduce((acc, item) => ({ ...acc, [item.key]: 0 }), {})
-  );
 
-  const handleIncrement = (key) => {
-    setSelectedQuantities((prev) => ({
-      ...prev,
-      [key]: prev[key] + 1,
-    }));
+  const handleQuantityChange = (index, value) => {
+    const newQuantities = [...quantities];
+    newQuantities[index] = value;
+    setQuantities(newQuantities);
   };
 
-  const handleDecrement = (key) => {
-    setSelectedQuantities((prev) => ({
-      ...prev,
-      [key]: Math.max(0, prev[key] - 1),
-    }));
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    const filtered = data.filter(
+      (item) =>
+        item.id.toLowerCase().includes(value.toLowerCase()) ||
+        item.name.toLowerCase().includes(value.toLowerCase()) ||
+        item.type.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredData(filtered);
   };
 
-  const handleInputChange = (key, value) => {
-    const newValue = value === "" ? 0 : parseInt(value);
-    if (!isNaN(newValue)) {
-      setSelectedQuantities((prev) => ({
-        ...prev,
-        [key]: Math.max(0, newValue),
-      }));
-    }
+  const handleFilterClick = () => {
+    console.log("Filter button clicked");
+    // Add your filter logic here when needed
   };
 
   return (
-    <div className="flex justify-center items-start min-h-screen pt-10">
-      <div className="space-y-5 p-4 w-full max-w-7xl">
-        {/* Search Input and Filter Button */}
-        <div className="flex justify-end space-x-4 mb-6">
-          <Input
-            style={{ width: "230px" }}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by ID"
-            prefix={<SearchOutlined />}
-          />
-          <Button
-            style={{
-              backgroundColor: "#fff",
-              width: "130px",
-              height: "40px",
-              color: "black",
-              padding: "6px 16px",
-              borderRadius: "7px",
-              fontSize: "14px",
-            }}
-            size="small"
-          >
-            Enter requisition
-          </Button>
-        </div>
+    <div className="flex flex-col items-center min-h-screen p-4">
+      {/* Header section */}
+      <div className="flex items-center justify-start gap-6 mb-3 w-full ml-[14rem]">
+        <h1 className="text-xl font-bold">เบิกสินค้า</h1>
+        <h1 className="text-xl font-bold">ประวัติการเบิก</h1>
+      </div>
 
-        {/* Table Header */}
-        <div className="px-4 p-4 w-full h-[60px] mb-4">
-          <div className="flex gap-6">
-            <p className="w-[150px] flex items-center justify-center text-center font-semibold">
-              ID
-            </p>
-            <p className="w-[120px] flex items-center justify-center text-center font-semibold">
-              Type
-            </p>
-            <p className="w-[200px] flex items-center justify-center text-center font-semibold">
-              Name
-            </p>
-            <p className="w-[130px] flex items-center justify-center text-center font-semibold">
-              Location
-            </p>
-            <p className="w-[120px] flex items-center justify-center text-center font-semibold">
-              Inventory
-            </p>
-            <p className="w-[120px] flex items-center justify-center text-center font-semibold">
-              Amount
-            </p>
-            <p className="w-[150px] flex items-center justify-center text-center font-semibold">
-              Action
-            </p>
-          </div>
-        </div>
+      {/* Divider */}
+      <div className="w-[1400px] h-[1px] bg-[#dcdcdc] mb-4"></div>
 
-        {/* Data Table */}
-        {filteredData.map((item) => (
-          <div
-            key={item.key}
-            className="px-4 p-4 w-full h-[70px] mb-4 bg-white rounded-[13.05px] shadow-[1.3054757118225098px_22.193086624145508px_57.4409294128418px_0px_rgba(3,2,41,0.07)]"
-          >
-            <div className="flex gap-6">
-              <div className="w-[150px] flex items-center justify-center text-center">
-                {item.id}
-              </div>
-              <div className="w-[120px] flex items-center justify-center text-center">
-                {item.type}
-              </div>
-              <div className="w-[200px] flex items-center justify-center text-center">
-                <div className="flex items-center justify-center space-x-2">
+      {/* Search and Filter section */}
+      <Space
+        direction="horizontal"
+        style={{ marginBottom: 16, display: "flex", gap: 35 }}
+      >
+        <Search
+          placeholder="ค้นหาสินค้า..."
+          allowClear
+          enterButton={<Button icon={<SearchOutlined />} />}
+          onSearch={handleSearch}
+          onChange={(e) => handleSearch(e.target.value)}
+          style={{
+            width: 1120,
+          }}
+        />
+        <Button
+          icon={<FilterOutlined />}
+          onClick={handleFilterClick}
+          type="primary"
+          style={{
+            backgroundColor: "#1890ff",
+            borderColor: "#1890ff",
+            width: 232,
+          }}
+        >
+          ตัวกรอง
+        </Button>
+      </Space>
+
+      {/* Table */}
+      <div className="w-full max-w-[1400px]">
+        <table className="w-full table-fixed">
+          <thead>
+            <tr className="bg-gray-200 border-b border-gray-300 h-15">
+              <th className="p-2 text-sm text-center w-[150px]">รหัสสินค้า</th>
+              <th className="p-2 text-sm text-center w-[120px]">หมวดหมู่</th>
+              <th className="p-2 text-sm text-center w-[100px]">รูป</th>
+              <th className="p-2 text-sm text-center w-[200px]">ชื่อสินค้า</th>
+              <th className="p-2 text-sm text-center w-[100px]">คงเหลือ</th>
+              <th className="p-2 text-sm text-center w-[120px]">จำนวน</th>
+              <th className="p-2 text-sm text-center w-[100px]"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredData.map((item, index) => (
+              <tr
+                key={item.key}
+                className="border-b border-gray-300 hover:bg-gray-50 h-15"
+              >
+                <td className="p-2 text-sm text-center">{item.id}</td>
+                <td className="p-2 text-sm text-center">{item.type}</td>
+                <td className="p-2 text-sm text-center">
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-10 h-10 rounded-full"
+                    className="w-10 h-10 rounded-full mx-auto"
                   />
-                  <span>{item.name}</span>
-                </div>
-              </div>
-              <div className="w-[130px] flex items-center justify-center text-center">
-                {item.location}
-              </div>
-              <div className="w-[120px] flex items-center justify-center text-center">
-                {item.quantity}
-              </div>
-              <div className="w-[120px] flex items-center justify-center text-center">
-                <div className="flex items-center justify-center w-full h-full">
-                  <div className="flex items-center justify-between bg-gray-50 rounded-full w-24 px-2 py-1">
-                    <button
-                      onClick={() => handleDecrement(item.key)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-white text-blue-600 shadow-sm border border-gray-100 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
-                      aria-label="ลดจำนวน"
-                    >
-                      <span className="text-base font-medium">−</span>
-                    </button>
-
-                    <input
-                      type="text"
-                      value={selectedQuantities[item.key]}
-                      onChange={(e) => handleInputChange(item.key, e.target.value)}
-                      className="w-8 h-7 text-center font-medium text-base text-gray-800 bg-transparent focus:outline-none"
-                      aria-label="จำนวน"
-                      onKeyPress={(e) => {
-                        if (!/[0-9]/.test(e.key)) {
-                          e.preventDefault();
-                        }
-                      }}
-                    />
-
-                    <button
-                      onClick={() => handleIncrement(item.key)}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-white text-blue-600 shadow-sm border border-gray-100 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
-                      aria-label="เพิ่มจำนวน"
-                    >
-                      <span className="text-base font-medium">+</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="w-[150px] flex items-center justify-center text-center">
-                <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">+</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      <div className="w-[1250px] h-[327px] bg-[#f0f1f9]/60 rounded-[14px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-
+                </td>
+                <td className="p-2 text-sm text-center">{item.name}</td>
+                <td className="p-2 text-sm text-center">{item.quantity}</td>
+                <td className="p-2 text-sm text-center">
+                  <CustomInputNumber
+                    value={quantities[index]}
+                    onChange={(value) => handleQuantityChange(index, value)}
+                    min={0}
+                    max={item.quantity}
+                  />
+                </td>
+                <td className="p-2 text-sm text-center">
+                  <Button
+                    type="primary"
+                    style={{
+                      backgroundColor: "#3A974C",
+                      borderColor: "#52c41a",
+                    }}
+                    onClick={() =>
+                      handleQuantityChange(index, quantities[index])
+                    }
+                  >
+                    เพิ่ม
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="flex flex-row justify-between  min-h-screen p-4">
+          <h1>รายการสินค้าที่เลือก</h1>
+          <h1>
+            จำนวน <span>2</span> รายการ
+          </h1>
+        </div>
       </div>
-      </div>
-      
     </div>
   );
 };

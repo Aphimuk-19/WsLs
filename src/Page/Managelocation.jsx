@@ -177,7 +177,7 @@ const Managelocation = () => {
                                     handleCellClickWithDropdown(row, col, subCell.id);
                                   }}
                                 >
-                                  <div className="text-xs">{subCell.id.split("-").slice(-1)[0]}</div>
+                                  <div className="text-xs">{subCell.id}</div> {/* แสดงชื่อเต็ม เช่น A-01-A */}
                                   {isSubCellDropdownOpen && (
                                     <div className="absolute z-10 top-16 left-0 bg-white border border-gray-200 rounded shadow-md">
                                       <select
@@ -288,22 +288,22 @@ const Managelocation = () => {
             </div>
           </Modal>
           <div className="flex items-center justify-start mt-10 space-x-20 ml-[37px]">
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-white border border-gray-200 rounded-full mr-2"></div>
-              <span className="text-sm">0 (ว่าง)</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-green-500 border border-gray-200 rounded-full mr-2"></div>
-              <span className="text-sm">1 (ใช้งาน)</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-red-500 border border-gray-200 rounded-full mr-2"></div>
-              <span className="text-sm">2 (เต็ม)</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-gray-500 border border-gray-200 rounded-full mr-2"></div>
-              <span className="text-sm">3 (ปิดการใช้งาน)</span>
-            </div>
+          <div className="flex items-center">
+                  <div className="w-4 h-4 bg-white border border-gray-200 rounded-full mr-2"></div>
+                  <span className="text-sm">(ว่าง)</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-green-500 border border-gray-200 rounded-full mr-2"></div>
+                  <span className="text-sm">(ใช้งาน)</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-red-500 border border-gray-200 rounded-full mr-2"></div>
+                  <span className="text-sm">(เต็ม)</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-gray-500 border border-gray-200 rounded-full mr-2"></div>
+                  <span className="text-sm">(ปิดการใช้งาน)</span>
+                </div>
           </div>
         </div>
       </div>

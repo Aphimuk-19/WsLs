@@ -37,8 +37,8 @@ export const LocationProvider = ({ children }) => {
         if (!acc[cell.col]) acc[cell.col] = [];
         const subCells = [];
         if (cell.divisionType === "dual") {
-          subCells.push({ id: `${cell.cellId}-A`, status: cell.subCellsA?.status || 0 });
-          subCells.push({ id: `${cell.cellId}-B`, status: cell.subCellsB?.status || 0 });
+          subCells.push({ id: `${cell.col}-${cell.row}-A`, status: cell.subCellsA?.status || 0 });
+          subCells.push({ id: `${cell.col}-${cell.row}-B`, status: cell.subCellsB?.status || 0 });
         }
         acc[cell.col].push({
           row: cell.row,
@@ -50,8 +50,8 @@ export const LocationProvider = ({ children }) => {
       const formattedStatus = cells.reduce((acc, cell) => {
         acc[cell.cellId] = cell.status;
         if (cell.divisionType === "dual") {
-          acc[`${cell.cellId}-A`] = cell.subCellsA?.status || 0;
-          acc[`${cell.cellId}-B`] = cell.subCellsB?.status || 0;
+          acc[`${cell.col}-${cell.row}-A`] = cell.subCellsA?.status || 0;
+          acc[`${cell.col}-${cell.row}-B`] = cell.subCellsB?.status || 0;
         }
         return acc;
       }, {});
@@ -136,8 +136,8 @@ export const LocationProvider = ({ children }) => {
         
         const cellIndex = updatedCells[col].findIndex((c) => c.row === row);
         const newSubCells = [
-          { id: `${cellId}-A`, status: 1 },
-          { id: `${cellId}-B`, status: 1 },
+          { id: `${col}-${row}-A`, status: 1 },
+          { id: `${col}-${row}-B`, status: 1 },
         ];
 
         if (cellIndex >= 0) {
@@ -157,8 +157,8 @@ export const LocationProvider = ({ children }) => {
       setCellStatus((prevStatus) => ({
         ...prevStatus,
         [cellId]: 0,
-        [`${cellId}-A`]: 1,
-        [`${cellId}-B`]: 1,
+        [`${col}-${row}-A`]: 1,
+        [`${col}-${row}-B`]: 1,
       }));
 
       setIsChoosingToSplit(false);
