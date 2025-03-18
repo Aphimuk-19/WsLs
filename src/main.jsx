@@ -21,6 +21,7 @@ import Addproduct from "./Page/Addproduct";
 import Requisition from "./Page/Requisition";
 import Exportpage from "./Page/Exportpage";
 
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <LocationProvider>

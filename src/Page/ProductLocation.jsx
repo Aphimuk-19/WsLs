@@ -22,7 +22,8 @@ const ProductLocation = () => {
   const [billNumber, setBillNumber] = useState("");
   const [error, setError] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [productsData, setProductsData] = useState([]); // เปลี่ยนจาก billsData เป็น productsData เพื่อให้ชัดเจนว่าเป็นข้อมูลสินค้า
+  const [productsData, setProductsData] = useState([]);
+  const [otherLocations, setOtherLocations] = useState([]);
 
   const baseColumnWidth = 9;
   const gapWidth = 0.5;
@@ -34,34 +35,6 @@ const ProductLocation = () => {
     paddingWidth
   }rem`;
 
-  // ดึงข้อมูลบิลทั้งหมดจาก API
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get("http://172.18.43.37 sleeve3000/api/bill/bills/");
-        // สมมติว่า API ส่งข้อมูลเป็น array ของบิลที่มี products
-        const allProducts = response.data.flatMap((bill) =>
-          bill.items.map((item, index) => ({
-            key: `${bill.billNumber}-${item.product.productId}`,
-            no: index + 1,
-            id: item.product.productId,
-            type: item.product.type,
-            name: item.product.name,
-            image: item.product.image,
-            location: item.product.location || "N/A",
-            in: item.product.inDate,
-            end: item.product.endDate,
-            quantity: item.product.quantity,
-          }))
-        );
-        setProductsData(allProducts);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    };
-    fetchProducts();
-  }, []);
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (tableRef.current && !tableRef.current.contains(event.target)) {
@@ -71,6 +44,69 @@ const ProductLocation = () => {
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [setSelectedCell]);
+
+  const fetchCellProducts = async (cellId) => {
+    try {
+      const response = await axios.get("http://172.18.43.37:3000/api/cell/products");
+      if (!response.data.success) throw new Error("Invalid API response");
+
+      const cellProducts = response.data.data
+        .filter((product) => {
+          const productLocation = product.location.subCell
+            ? `${product.location.cellId}-${product.location.subCell}`
+            : product.location.cellId;
+          return productLocation === cellId;
+        })
+        .map((item, index) => ({
+          key: `${item.productId}-${index}`,
+          no: index + 1,
+          id: item.productId,
+          type: item.type,
+          name: item.name,
+          image: item.image,
+          location: item.location.subCell ? `${item.location.cellId}-${item.location.subCell}` : item.location.cellId,
+          in: item.inDate,
+          end: item.endDate,
+          quantity: item.quantity,
+        }));
+
+      setProductsData(cellProducts);
+    } catch (error) {
+      console.error("Error fetching cell products:", error.message);
+      setProductsData([]);
+    }
+  };
+
+  const fetchOtherLocations = async (productId) => {
+    try {
+      const response = await axios.get("http://172.18.43.37:3000/api/cell/products");
+      if (!response.data.success) throw new Error("Invalid API response");
+
+      const otherLocationsData = response.data.data
+        .filter((product) => {
+          const productLocation = product.location.subCell
+            ? `${product.location.cellId}-${product.location.subCell}`
+            : product.location.cellId;
+          return product.productId === productId && productLocation !== selectedCell;
+        })
+        .map((product) => ({
+          productId: product.productId,
+          name: product.name,
+          image: product.image,
+          location: product.location.subCell
+            ? `${product.location.cellId}-${product.location.subCell}`
+            : product.location.cellId,
+          quantity: product.quantity,
+        }));
+
+      setOtherLocations(otherLocationsData);
+      setIsSearchModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching other locations:", error.message);
+      setOtherLocations([]);
+      setIsSearchModalOpen(true);
+    }
+  };
 
   const handleButtonClick = () => setIsModalOpen(true);
 
@@ -82,7 +118,7 @@ const ProductLocation = () => {
 
     try {
       const response = await axios.get(`http://172.18.43.37:3000/api/bill/bills/${billNumber}`);
-      const billData = response.data.bill; // สมมติว่า API ส่งข้อมูลใน key "bill"
+      const billData = response.data.bill;
       if (!billData) {
         setError("ไม่พบเลขที่บิลนี้ในระบบ");
         return;
@@ -106,12 +142,13 @@ const ProductLocation = () => {
 
   const handleSearchClick = (product) => {
     setSelectedProduct(product);
-    setIsSearchModalOpen(true);
+    fetchOtherLocations(product.id);
   };
 
   const handleSearchModalClose = () => {
     setIsSearchModalOpen(false);
     setSelectedProduct(null);
+    setOtherLocations([]);
   };
 
   const getBackgroundColor = (status, isSelected) => {
@@ -226,11 +263,12 @@ const ProductLocation = () => {
                     className={`h-16 relative ${
                       hasSubCells
                         ? "flex space-x-1 bg-transparent"
-                        : `${getBackgroundColor(status, isSelected)} border border-gray-200 rounded-sm hover:bg-opacity-75`
+                        : `${getBackgroundColor(status, isSelected)} border border-gray-200 rounded-sm hover:bg-opacity-75 cursor-pointer`
                     }`}
                     onClick={() => {
                       handleCellClick(row, col);
                       setSelectedCell(cellId);
+                      if (!hasSubCells) fetchCellProducts(cellId);
                     }}
                   >
                     {hasSubCells ? (
@@ -247,12 +285,13 @@ const ProductLocation = () => {
                             )} ${getTextColor(
                               subCellStatus,
                               isSubCellSelected
-                            )} border border-gray-200 rounded-sm flex items-center justify-center hover:bg-opacity-75`}
+                            )} border border-gray-200 rounded-sm flex items-center justify-center hover:bg-opacity-75 cursor-pointer`}
                             style={{ width: `${baseColumnWidth / 2}rem` }}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleCellClick(row, col);
                               setSelectedCell(subCell.id);
+                              fetchCellProducts(subCell.id);
                             }}
                           >
                             <div className="text-xs">{subCell.id}</div>
@@ -313,39 +352,47 @@ const ProductLocation = () => {
           <input
             className="w-[65px] h-[25px] bg-[#d9d9d9]/50 border border-black ml-2"
             type="text"
+            value={selectedCell || ""}
+            readOnly
           />
         </div>
-        <div className="px-4 p-4 w-full h-[60px] mb-4">
-          <div className="flex gap-6">
-            <p className="w-[100px] flex items-center justify-center text-center">No</p>
-            <p className="w-[150px] flex items-center justify-center text-center">ID</p>
-            <p className="w-[120px] flex items-center justify-center text-center">Type</p>
-            <p className="w-[200px] flex items-center justify-center text-center">Name</p>
-            <p className="w-[130px] flex items-center justify-center text-center">Location</p>
-            <p className="w-[120px] flex items-center justify-center text-center">In</p>
-            <p className="w-[120px] flex items-center justify-center text-center">End</p>
-            <p className="w-[150px] flex items-center justify-center text-center"></p>
+        
+        {/* Header */}
+        <div className="px-4 py-4 w-full h-[60px] mb-4 bg-gray-100 rounded-t-lg">
+          <div className="flex items-center justify-between">
+            <p className="w-[60px] text-center font-semibold">No</p>
+            <p className="w-[120px] text-center font-semibold">ID</p>
+            <p className="w-[100px] text-center font-semibold">Type</p>
+            <p className="w-[220px] text-center font-semibold">Name</p>
+            <p className="w-[100px] text-center font-semibold">Location</p>
+            <p className="w-[80px] text-center font-semibold">Quantity</p>
+            <p className="w-[100px] text-center font-semibold">In</p>
+            <p className="w-[100px] text-center font-semibold">End</p>
+            <p className="w-[80px] text-center font-semibold">Action</p>
           </div>
         </div>
+
+        {/* Data */}
         {productsData.length > 0 ? (
           productsData.map((item) => (
             <div
               key={item.key}
-              className="px-4 p-4 w-full h-[70px] mb-4 bg-white rounded-[13.05px] shadow-[1.3054757118225098px_22.193086624145508px_57.4409294128418px_0px_rgba(3,2,41,0.07)]"
+              className="px-4 py-4 w-full h-[70px] mb-4 bg-white rounded-[13.05px] shadow-[1.3054757118225098px_22.193086624145508px_57.4409294128418px_0px_rgba(3,2,41,0.07)]"
             >
-              <div className="flex gap-6">
-                <div className="w-[100px] flex items-center justify-center text-center">{item.no}</div>
-                <div className="w-[150px] flex items-center justify-center text-center">{item.id}</div>
-                <div className="w-[120px] flex items-center justify-center text-center">{item.type}</div>
-                <div className="w-[200px] flex items-center justify-center text-center">
+              <div className="flex items-center justify-between">
+                <div className="w-[60px] text-center">{item.no}</div>
+                <div className="w-[120px] text-center">{item.id}</div>
+                <div className="w-[100px] text-center">{item.type}</div>
+                <div className="w-[220px] flex items-center justify-center text-center">
                   <img src={item.image} alt={item.name} className="w-10 h-10 rounded-full mr-2" />
-                  {item.name}
+                  <span>{item.name}</span>
                 </div>
-                <div className="w-[130px] flex items-center justify-center text-center">{item.location}</div>
-                <div className="w-[120px] flex items-center justify-center text-center">{item.in}</div>
-                <div className="w-[120px] flex items-center justify-center text-center">{item.end}</div>
+                <div className="w-[100px] text-center">{item.location}</div>
+                <div className="w-[80px] text-center">{item.quantity}</div>
+                <div className="w-[100px] text-center">{item.in}</div>
+                <div className="w-[100px] text-center">{item.end}</div>
                 <div
-                  className="w-[150px] flex items-center justify-center text-center cursor-pointer hover:text-blue-500"
+                  className="w-[80px] text-center cursor-pointer hover:text-blue-500"
                   onClick={() => handleSearchClick(item)}
                 >
                   <SearchOutlined className="text-xl" />
@@ -354,7 +401,9 @@ const ProductLocation = () => {
             </div>
           ))
         ) : (
-          <div className="text-center text-gray-500">ไม่มีข้อมูลสินค้า</div>
+          <div className="text-center text-gray-500 py-10">
+            ยังไม่มีข้อมูลสินค้า กรุณาคลิกที่ Location เพื่อดูข้อมูล
+          </div>
         )}
       </div>
 
@@ -362,25 +411,29 @@ const ProductLocation = () => {
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-[450px] max-h-[400px] overflow-y-auto">
             <div className="flex flex-col gap-4">
-              <div className="flex gap-4">
+              <div className="flex items-center gap-4">
                 <img
                   src={selectedProduct.image}
                   alt={selectedProduct.name}
                   className="w-[150px] h-[150px] object-contain"
                 />
-                <div className="flex flex-col justify-center">
+                <div className="flex-1">
                   <p className="text-lg font-semibold">Name: {selectedProduct.name}</p>
                   <p className="text-sm text-gray-600">Type: {selectedProduct.type}</p>
                 </div>
               </div>
               <div className="border-t pt-4">
                 <p className="font-semibold mb-2">Location ที่ตั้งสินค้า:</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>{selectedProduct.location}</span>
-                    <span className="text-green-600">จำนวน {selectedProduct.quantity} ชิ้น</span>
-                  </div>
-                </div>
+                {otherLocations.length > 0 ? (
+                  otherLocations.map((loc, index) => (
+                    <div key={index} className="flex justify-between mb-2">
+                      <span>{loc.location}</span>
+                      <span className="text-green-600">จำนวน {loc.quantity} ชิ้น</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-500">ไม่มีสินค้าในตำแหน่งอื่น</p>
+                )}
               </div>
               <div className="flex justify-end mt-4">
                 <button

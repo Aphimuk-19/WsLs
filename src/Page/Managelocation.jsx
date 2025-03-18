@@ -26,6 +26,8 @@ const Managelocation = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [cellToReset, setCellToReset] = useState(null);
 
   useEffect(() => {
     const userRole = localStorage.getItem("role");
@@ -73,6 +75,20 @@ const Managelocation = () => {
     else setDropdownCell(null);
   };
 
+  const handleResetConfirm = (cellId) => {
+    setCellToReset(cellId);
+    setShowResetConfirm(true);
+  };
+
+  const handleResetCell = () => {
+    if (cellToReset) {
+      handleCellStatusChange(cellToReset, "reset");
+      setShowResetConfirm(false);
+      setCellToReset(null);
+      setDropdownCell(null);
+    }
+  };
+
   const getCellColor = (status) => {
     switch (status) {
       case 0: return "bg-white text-black";
@@ -109,7 +125,7 @@ const Managelocation = () => {
             <div></div>
             <button
               onClick={handleAddCell}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center"
+              className="px-4 py-2 bg-[#006ec4] text-white rounded hover:bg-blue-600 flex items-center"
             >
               <PlusCircleOutlined className="mr-2" />
               Add Location
@@ -177,14 +193,17 @@ const Managelocation = () => {
                                     handleCellClickWithDropdown(row, col, subCell.id);
                                   }}
                                 >
-                                  <div className="text-xs">{subCell.id}</div> {/* แสดงชื่อเต็ม เช่น A-01-A */}
+                                  <div className="text-xs">{subCell.id}</div>
                                   {isSubCellDropdownOpen && (
                                     <div className="absolute z-10 top-16 left-0 bg-white border border-gray-200 rounded shadow-md">
                                       <select
                                         value=""
                                         onChange={(e) => {
-                                          console.log("Selected action:", e.target.value, "for subcell:", subCell.id);
-                                          handleCellStatusChange(subCell.id, e.target.value);
+                                          if (e.target.value === "reset") {
+                                            handleResetConfirm(subCell.id);
+                                          } else {
+                                            handleCellStatusChange(subCell.id, e.target.value);
+                                          }
                                         }}
                                         className="p-2 w-32 bg-white text-black"
                                         onClick={(e) => e.stopPropagation()}
@@ -214,8 +233,11 @@ const Managelocation = () => {
                               <select
                                 value=""
                                 onChange={(e) => {
-                                  console.log("Selected action:", e.target.value, "for cell:", cellId);
-                                  handleCellStatusChange(cellId, e.target.value);
+                                  if (e.target.value === "reset") {
+                                    handleResetConfirm(cellId);
+                                  } else {
+                                    handleCellStatusChange(cellId, e.target.value);
+                                  }
                                 }}
                                 className="p-2 w-32 bg-white text-black"
                                 onClick={(e) => e.stopPropagation()}
@@ -287,23 +309,52 @@ const Managelocation = () => {
               </div>
             </div>
           </Modal>
+          <Modal
+            title="ยืนยันการรีเซ็ตเซลล์"
+            open={showResetConfirm}
+            onCancel={() => {
+              setShowResetConfirm(false);
+              setCellToReset(null);
+            }}
+            footer={[
+              <button
+                key="cancel"
+                onClick={() => {
+                  setShowResetConfirm(false);
+                  setCellToReset(null);
+                }}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 mr-2"
+              >
+                ยกเลิก
+              </button>,
+              <button
+                key="confirm"
+                onClick={handleResetCell}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                ยืนยัน
+              </button>,
+            ]}
+          >
+            <p>คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตเซลล์นี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้</p>
+          </Modal>
           <div className="flex items-center justify-start mt-10 space-x-20 ml-[37px]">
-          <div className="flex items-center">
-                  <div className="w-4 h-4 bg-white border border-gray-200 rounded-full mr-2"></div>
-                  <span className="text-sm">(ว่าง)</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-green-500 border border-gray-200 rounded-full mr-2"></div>
-                  <span className="text-sm">(ใช้งาน)</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-red-500 border border-gray-200 rounded-full mr-2"></div>
-                  <span className="text-sm">(เต็ม)</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-gray-500 border border-gray-200 rounded-full mr-2"></div>
-                  <span className="text-sm">(ปิดการใช้งาน)</span>
-                </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-white border border-gray-200 rounded-full mr-2"></div>
+              <span className="text-sm">(ว่าง)</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-green-500 border border-gray-200 rounded-full mr-2"></div>
+              <span className="text-sm">(ใช้งาน)</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-red-500 border border-gray-200 rounded-full mr-2"></div>
+              <span className="text-sm">(เต็ม)</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-gray-500 border border-gray-200 rounded-full mr-2"></div>
+              <span className="text-sm">(ปิดการใช้งาน)</span>
+            </div>
           </div>
         </div>
       </div>

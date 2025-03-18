@@ -1,6 +1,7 @@
 import React, { useContext, useRef, useEffect, useState } from "react";
 import { LocationContext } from "../Context/LocationContext";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Modal } from "antd";
 
 const Addproduct = () => {
   const {
@@ -14,10 +15,13 @@ const Addproduct = () => {
   } = useContext(LocationContext);
 
   const location = useLocation();
+  const navigate = useNavigate();
   const tableRef = useRef(null);
   const [persistentSelectedCell, setPersistentSelectedCell] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [billData, setBillData] = useState(null);
+  const [storedProducts, setStoredProducts] = useState({});
+  const [existingLocations, setExistingLocations] = useState([]);
 
   useEffect(() => {
     if (location.state && location.state.billData) {
@@ -29,6 +33,28 @@ const Addproduct = () => {
     console.log("Addproduct rendered with columns:", columns);
     console.log("Addproduct rendered with newCells:", newCells);
   }, [columns, newCells]);
+
+  const fetchProductLocations = async (productId) => {
+    try {
+      const response = await fetch("http://172.18.43.37:3000/api/cell/products");
+      if (!response.ok) throw new Error("Failed to fetch products");
+
+      const data = await response.json();
+      if (!data.success || !Array.isArray(data.data)) throw new Error("Invalid API response");
+
+      const matchingProducts = data.data.filter((product) => product.productId === productId);
+      const locations = matchingProducts.map((product) => {
+        const cellId = product.location.cellId;
+        const subCell = product.location.subCell;
+        return subCell ? `${cellId}-${subCell}` : cellId;
+      });
+
+      setExistingLocations(locations);
+    } catch (error) {
+      console.error("Error fetching product locations:", error.message);
+      setExistingLocations([]);
+    }
+  };
 
   const handleCellClickWithDropdown = (row, col, subCellId = null) => {
     const cellId = subCellId || `${col}-${row}`;
@@ -73,7 +99,7 @@ const Addproduct = () => {
 
   const isButtonEnabled = (cellId) => {
     const status = cellStatus[cellId] !== undefined ? cellStatus[cellId] : 0;
-    return status === 1;
+    return status === 1 && selectedProduct !== null;
   };
 
   const baseColumnWidth = 9;
@@ -88,6 +114,7 @@ const Addproduct = () => {
 
   const handleProductRowClick = (productId) => {
     setSelectedProduct(productId);
+    fetchProductLocations(productId);
     console.log("Selected product:", productId);
   };
 
@@ -97,6 +124,93 @@ const Addproduct = () => {
     const month = date.toLocaleString("th-TH", { month: "long" });
     const year = date.getFullYear() + 543;
     return `${day} ${month} ${year}`;
+  };
+
+  const handleUseCell = () => {
+    if (!persistentSelectedCell || !selectedProduct) return;
+
+    const product = billData.items.find((item) => item.product.productId === selectedProduct)?.product;
+    if (!product) return;
+
+    setStoredProducts((prev) => ({
+      ...prev,
+      [selectedProduct]: {
+        cellId: persistentSelectedCell,
+        storedQuantity: product.quantity, // Store full quantity by default
+      },
+    }));
+
+    console.log(`Assigned ${selectedProduct} to ${persistentSelectedCell}`);
+  };
+
+  // Check if all products are fully stored
+  const areAllProductsStored = () => {
+    if (!billData || !billData.items) return false;
+
+    const allProducts = billData.items.map((item) => ({
+      productId: item.product.productId,
+      quantity: item.product.quantity,
+    }));
+
+    return allProducts.every((product) => {
+      const stored = storedProducts[product.productId];
+      return stored && stored.storedQuantity === product.quantity;
+    });
+  };
+
+  const handleConfirm = async () => {
+    if (!areAllProductsStored()) {
+      alert("กรุณาจัดเก็บสินค้าให้ครบทุกชิ้นก่อนยืนยัน");
+      return;
+    }
+
+    try {
+      for (const [productId, { cellId, storedQuantity }] of Object.entries(storedProducts)) {
+        const product = billData.items.find((item) => item.product.productId === productId)?.product;
+        const isSubCell = cellId.includes("-A") || cellId.includes("-B");
+        const subCell = isSubCell ? (cellId.endsWith("-A") ? "A" : "B") : null;
+
+        const payload = {
+          productId: product.productId,
+          type: product.type,
+          name: product.name,
+          inDate: billData.inDate,
+          endDate: billData.endDate || new Date().toISOString(),
+          quantity: storedQuantity,
+          image: product.image,
+          location: {
+            cellId: isSubCell ? cellId.split("-").slice(0, 2).join("-") : cellId,
+            subCell,
+          },
+        };
+
+        const response = await fetch("http://172.18.43.37:3000/api/cell/add-product", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to add product: ${errorText}`);
+        }
+      }
+
+      Modal.success({
+        title: "สำเร็จ",
+        content: "เพิ่มสินค้าลงในคลังเรียบร้อยแล้ว",
+        onOk: () => {
+          navigate("/productlocation");
+        },
+      });
+    } catch (error) {
+      console.error("Failed to confirm products:", error.message);
+      alert("เกิดข้อผิดพลาดในการยืนยัน: " + error.message);
+    }
+  };
+
+  const handleCancel = () => {
+    navigate(-1);
   };
 
   const products = billData?.items.map((item) => item.product) || [];
@@ -241,7 +355,7 @@ const Addproduct = () => {
                   </span>
                 </p>
                 <p className="text-black text-[13px] font-medium">
-                  Location: <span className="text-blue-500">A1 , A2 , A3</span>
+                  Location: <span className="text-blue-500">{existingLocations.length > 0 ? existingLocations.join(", ") : "ไม่มีตำแหน่ง"}</span>
                 </p>
                 <button
                   className={`w-[68px] h-[25px] rounded-[5px] border mt-5 ${
@@ -249,7 +363,8 @@ const Addproduct = () => {
                       ? "bg-[#0a8f08] text-white border-[#0a8f08] hover:bg-[#067d06]"
                       : "bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed"
                   }`}
-                  disabled={persistentSelectedCell ? !isButtonEnabled(persistentSelectedCell) : true}
+                  onClick={handleUseCell}
+                  disabled={!persistentSelectedCell || !isButtonEnabled(persistentSelectedCell)}
                 >
                   ใช้ช่องนี้
                 </button>
@@ -280,10 +395,12 @@ const Addproduct = () => {
                       <td className="p-2 text-sm text-center">{product.productId}</td>
                       <td className="p-2 text-sm text-center">{product.name}</td>
                       <td className="p-2 text-sm text-center">{product.quantity}</td>
-                      <td className="p-2 text-sm text-center">0</td>
+                      <td className="p-2 text-sm text-center">
+                        {storedProducts[product.productId]?.storedQuantity || 0}
+                      </td>
                       <td className="p-2 text-sm text-center relative">
-                        0
-                        {selectedProduct === product.productId && (
+                        {storedProducts[product.productId]?.cellId || "ยังไม่ได้เลือก"}
+                        {selectedProduct === product.productId && !storedProducts[product.productId] && (
                           <span className="absolute right-2 text-xs text-blue-500">กำลังเลือก</span>
                         )}
                       </td>
@@ -294,10 +411,21 @@ const Addproduct = () => {
             </div>
           </div>
           <div className="flex justify-end pl-4 mt-4 p-10">
-            <button className="w-[80px] h-[35px] bg-[#0a8f08] text-white rounded-[5px] border border-[#0a8f08] hover:bg-[#067d06] mr-4">
+            <button
+              className={`w-[80px] h-[35px] rounded-[5px] border ${
+                areAllProductsStored()
+                  ? "bg-[#0a8f08] text-white border-[#0a8f08] hover:bg-[#067d06]"
+                  : "bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed"
+              }`}
+              onClick={handleConfirm}
+              disabled={!areAllProductsStored()}
+            >
               ตกลง
             </button>
-            <button className="w-[80px] h-[35px] bg-gray-500 text-white rounded-[5px] border border-gray-600 hover:bg-gray-600">
+            <button
+              className="w-[80px] h-[35px] bg-gray-500 text-white rounded-[5px] border border-gray-600 hover:bg-gray-600 ml-4"
+              onClick={handleCancel}
+            >
               ยกเลิก
             </button>
           </div>

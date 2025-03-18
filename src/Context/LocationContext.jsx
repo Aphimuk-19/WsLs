@@ -250,6 +250,10 @@ export const LocationProvider = ({ children }) => {
   const handleCellStatusChange = async (cellId, action) => {
     const currentStatus = cellStatus[cellId] || 0;
     let newStatus;
+    const [col, row] = cellId.split("-").slice(0, 2); // เช่น "A-01" จาก "A-01-A"
+    const parentCellId = `${col}-${row}`;
+    const cell = newCells[col]?.find((c) => c.row === row);
+    const hasSubCells = cell?.subCells?.length > 0;
 
     switch (action) {
       case "enabled":
@@ -261,8 +265,52 @@ export const LocationProvider = ({ children }) => {
         else return;
         break;
       case "reset":
-        if (currentStatus !== 0) newStatus = 0;
-        else return;
+        if (currentStatus === 0) return;
+        newStatus = 0;
+
+        if (hasSubCells && (cellId.includes("-A") || cellId.includes("-B"))) {
+          try {
+            const response = await fetch("http://172.18.43.37:3000/api/cell/update-status", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                cellId,
+                status: 0,
+                divisionType: "single",
+              }),
+            });
+
+            if (!response.ok) throw new Error("Failed to reset cell to single");
+
+            setNewCells((prevCells) => {
+              const updatedCells = { ...prevCells };
+              const cellIndex = updatedCells[col].findIndex((c) => c.row === row);
+              if (cellIndex >= 0) {
+                updatedCells[col][cellIndex] = {
+                  ...updatedCells[col][cellIndex],
+                  subCells: [],
+                };
+              }
+              return updatedCells;
+            });
+
+            setCellStatus((prevStatus) => {
+              const updatedStatus = { ...prevStatus };
+              updatedStatus[parentCellId] = 0;
+              delete updatedStatus[`${parentCellId}-A`];
+              delete updatedStatus[`${parentCellId}-B`];
+              return updatedStatus;
+            });
+
+            await fetchCells();
+            setSelectedCell(null);
+            return;
+          } catch (error) {
+            console.error("Failed to reset subCells to single cell:", error.message);
+            alert("ไม่สามารถรีเซ็ตเซลล์ได้: " + error.message);
+            return;
+          }
+        }
         break;
       case "activate":
         if (currentStatus === 0) {
