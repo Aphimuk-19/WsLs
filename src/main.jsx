@@ -1,13 +1,13 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import { BrowserRouter } from "react-router-dom"; 
+import { BrowserRouter } from "react-router-dom";
 import "@ant-design/v5-patch-for-react-19";
 import React from "react";
 import Login from "./Page/Login";
 import Register from "./Page/Register";
 import Sidebarlayout from "./Layout/Sidebarlayout";
-import { Route, Routes } from "react-router-dom"; 
+import { Route, Routes } from "react-router-dom";
 import Dashboard from "./Page/Dashboard";
 import Managelocation from "./Page/Managelocation";
 import ProductLocation from "./Page/ProductLocation";
@@ -21,11 +21,10 @@ import Addproduct from "./Page/Addproduct";
 import Requisition from "./Page/Requisition";
 import Exportpage from "./Page/Exportpage";
 
-
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <LocationProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <LocationProvider>
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/Login" element={<Login />} />
@@ -44,7 +43,7 @@ createRoot(document.getElementById("root")).render(
             <Route path="/Account" element={<Account />} />
           </Route>
         </Routes>
-      </BrowserRouter>
-    </LocationProvider>
+      </LocationProvider>
+    </BrowserRouter>
   </StrictMode>
 );

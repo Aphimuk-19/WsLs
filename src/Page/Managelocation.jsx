@@ -1,4 +1,5 @@
 import React, { useContext, useRef, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import HeaderManageLocation from "../Custom/HeaderManageLocation";
 import { LocationContext } from "../Context/LocationContext";
 import { Modal } from "antd";
@@ -21,18 +22,13 @@ const Managelocation = () => {
     setIsChoosingToSplit,
   } = useContext(LocationContext);
 
+  const navigate = useNavigate();
   const tableRef = useRef(null);
   const [dropdownCell, setDropdownCell] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [cellToReset, setCellToReset] = useState(null);
-
-  useEffect(() => {
-    const userRole = localStorage.getItem("role");
-    setIsAdmin(userRole?.toLowerCase() === "admin");
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -51,19 +47,39 @@ const Managelocation = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, [setSelectedCell, setIsChoosingToSplit, isChoosingToSplit, isTransitioning]);
 
-  const handleAddSingleCellWithTransition = () => {
+  const handleAddSingleCellWithTransition = async () => {
     if (!selectedCell) return;
     setIsTransitioning(true);
-    handleAddSingleCell();
-    setIsChoosingToSplit(false);
+    try {
+      await handleAddSingleCell();
+      setIsChoosingToSplit(false);
+    } catch (error) {
+      if (error.message.includes("401")) {
+        localStorage.removeItem("authToken");
+        alert("Session expired. Please log in again.");
+        navigate("/login");
+      } else {
+        alert("Failed to add single cell: " + error.message);
+      }
+    }
     setTimeout(() => setIsTransitioning(false), 50);
   };
 
-  const handleSplitCellWithTransition = () => {
+  const handleSplitCellWithTransition = async () => {
     if (!selectedCell) return;
     setIsTransitioning(true);
-    handleSplitCell();
-    setIsChoosingToSplit(false);
+    try {
+      await handleSplitCell();
+      setIsChoosingToSplit(false);
+    } catch (error) {
+      if (error.message.includes("401")) {
+        localStorage.removeItem("authToken");
+        alert("Session expired. Please log in again.");
+        navigate("/login");
+      } else {
+        alert("Failed to split cell: " + error.message);
+      }
+    }
     setTimeout(() => setIsTransitioning(false), 50);
   };
 
@@ -80,12 +96,22 @@ const Managelocation = () => {
     setShowResetConfirm(true);
   };
 
-  const handleResetCell = () => {
+  const handleResetCell = async () => {
     if (cellToReset) {
-      handleCellStatusChange(cellToReset, "reset");
-      setShowResetConfirm(false);
-      setCellToReset(null);
-      setDropdownCell(null);
+      try {
+        await handleCellStatusChange(cellToReset, "reset");
+        setShowResetConfirm(false);
+        setCellToReset(null);
+        setDropdownCell(null);
+      } catch (error) {
+        if (error.message.includes("401")) {
+          localStorage.removeItem("authToken");
+          alert("Session expired. Please log in again.");
+          navigate("/login");
+        } else {
+          alert("Failed to reset cell: " + error.message);
+        }
+      }
     }
   };
 
@@ -124,7 +150,19 @@ const Managelocation = () => {
           <div className="flex justify-between mb-4">
             <div></div>
             <button
-              onClick={handleAddCell}
+              onClick={async () => {
+                try {
+                  await handleAddCell();
+                } catch (error) {
+                  if (error.message.includes("401")) {
+                    localStorage.removeItem("authToken");
+                    alert("Session expired. Please log in again.");
+                    navigate("/login");
+                  } else {
+                    alert("Failed to add cell: " + error.message);
+                  }
+                }
+              }}
               className="px-4 py-2 bg-[#006ec4] text-white rounded hover:bg-blue-600 flex items-center"
             >
               <PlusCircleOutlined className="mr-2" />
@@ -198,11 +236,21 @@ const Managelocation = () => {
                                     <div className="absolute z-10 top-16 left-0 bg-white border border-gray-200 rounded shadow-md">
                                       <select
                                         value=""
-                                        onChange={(e) => {
-                                          if (e.target.value === "reset") {
-                                            handleResetConfirm(subCell.id);
-                                          } else {
-                                            handleCellStatusChange(subCell.id, e.target.value);
+                                        onChange={async (e) => {
+                                          try {
+                                            if (e.target.value === "reset") {
+                                              handleResetConfirm(subCell.id);
+                                            } else {
+                                              await handleCellStatusChange(subCell.id, e.target.value);
+                                            }
+                                          } catch (error) {
+                                            if (error.message.includes("401")) {
+                                              localStorage.removeItem("authToken");
+                                              alert("Session expired. Please log in again.");
+                                              navigate("/login");
+                                            } else {
+                                              alert("Failed to update status: " + error.message);
+                                            }
                                           }
                                         }}
                                         className="p-2 w-32 bg-white text-black"
@@ -232,11 +280,21 @@ const Managelocation = () => {
                             <div className="absolute z-10 top-16 left-0 bg-white border border-gray-200 rounded shadow-md">
                               <select
                                 value=""
-                                onChange={(e) => {
-                                  if (e.target.value === "reset") {
-                                    handleResetConfirm(cellId);
-                                  } else {
-                                    handleCellStatusChange(cellId, e.target.value);
+                                onChange={async (e) => {
+                                  try {
+                                    if (e.target.value === "reset") {
+                                      handleResetConfirm(cellId);
+                                    } else {
+                                      await handleCellStatusChange(cellId, e.target.value);
+                                    }
+                                  } catch (error) {
+                                    if (error.message.includes("401")) {
+                                      localStorage.removeItem("authToken");
+                                      alert("Session expired. Please log in again.");
+                                      navigate("/login");
+                                    } else {
+                                      alert("Failed to update status: " + error.message);
+                                    }
                                   }
                                 }}
                                 className="p-2 w-32 bg-white text-black"

@@ -2,6 +2,7 @@ import React, { useContext, useRef, useEffect, useState } from "react";
 import { LocationContext } from "../Context/LocationContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Modal } from "antd";
+import axios from "axios";
 
 const Addproduct = () => {
   const {
@@ -26,6 +27,7 @@ const Addproduct = () => {
   useEffect(() => {
     if (location.state && location.state.billData) {
       setBillData(location.state.billData);
+      console.log("Bill Data:", location.state.billData);
     }
   }, [location.state]);
 
@@ -36,13 +38,10 @@ const Addproduct = () => {
 
   const fetchProductLocations = async (productId) => {
     try {
-      const response = await fetch("http://172.18.43.37:3000/api/cell/products");
-      if (!response.ok) throw new Error("Failed to fetch products");
+      const response = await axios.get("http://172.18.43.37:3000/api/product/products");
+      if (!response.data.success) throw new Error("Invalid API response");
 
-      const data = await response.json();
-      if (!data.success || !Array.isArray(data.data)) throw new Error("Invalid API response");
-
-      const matchingProducts = data.data.filter((product) => product.productId === productId);
+      const matchingProducts = response.data.data.filter((product) => product.productId === productId);
       const locations = matchingProducts.map((product) => {
         const cellId = product.location.cellId;
         const subCell = product.location.subCell;
@@ -129,32 +128,26 @@ const Addproduct = () => {
   const handleUseCell = () => {
     if (!persistentSelectedCell || !selectedProduct) return;
 
-    const product = billData.items.find((item) => item.product.productId === selectedProduct)?.product;
-    if (!product) return;
+    const item = billData?.items.find((item) => item.product.productId === selectedProduct);
+    if (!item) return;
 
     setStoredProducts((prev) => ({
       ...prev,
       [selectedProduct]: {
         cellId: persistentSelectedCell,
-        storedQuantity: product.quantity, // Store full quantity by default
+        storedQuantity: item.quantity,
       },
     }));
 
-    console.log(`Assigned ${selectedProduct} to ${persistentSelectedCell}`);
+    console.log(`Assigned ${selectedProduct} to ${persistentSelectedCell} with quantity ${item.quantity}`);
   };
 
-  // Check if all products are fully stored
   const areAllProductsStored = () => {
     if (!billData || !billData.items) return false;
 
-    const allProducts = billData.items.map((item) => ({
-      productId: item.product.productId,
-      quantity: item.product.quantity,
-    }));
-
-    return allProducts.every((product) => {
-      const stored = storedProducts[product.productId];
-      return stored && stored.storedQuantity === product.quantity;
+    return billData.items.every((item) => {
+      const stored = storedProducts[item.product.productId];
+      return stored && stored.storedQuantity === item.quantity;
     });
   };
 
@@ -165,35 +158,35 @@ const Addproduct = () => {
     }
 
     try {
-      for (const [productId, { cellId, storedQuantity }] of Object.entries(storedProducts)) {
-        const product = billData.items.find((item) => item.product.productId === productId)?.product;
+      const assignments = Object.entries(storedProducts).map(([productId, { cellId, storedQuantity }]) => {
+        const item = billData.items.find((item) => item.product.productId === productId);
+        const product = item?.product;
+        if (!product) return null;
+
         const isSubCell = cellId.includes("-A") || cellId.includes("-B");
-        const subCell = isSubCell ? (cellId.endsWith("-A") ? "A" : "B") : null;
-
-        const payload = {
-          productId: product.productId,
-          type: product.type,
-          name: product.name,
-          inDate: billData.inDate,
-          endDate: billData.endDate || new Date().toISOString(),
-          quantity: storedQuantity,
-          image: product.image,
-          location: {
-            cellId: isSubCell ? cellId.split("-").slice(0, 2).join("-") : cellId,
-            subCell,
-          },
-        };
-
-        const response = await fetch("http://172.18.43.37:3000/api/cell/add-product", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to add product: ${errorText}`);
+        let subCell = null;
+        if (isSubCell) {
+          subCell = cellId.endsWith("-A") ? "subCellsA" : "subCellsB";
         }
+
+        return {
+          productId: product.productId,
+          cellId: isSubCell ? cellId.split("-").slice(0, 2).join("-") : cellId,
+          subCell,
+        };
+      }).filter(item => item !== null);
+
+      const payload = {
+        billNumber: billData.billNumber, // เปลี่ยนจาก billId เป็น billNumber
+        assignments, // เปลี่ยนจาก products เป็น assignments
+      };
+
+      console.log("Payload sent to backend:", payload); // Debug payload
+
+      const response = await axios.post("http://172.18.43.37:3000/api/cell/assign-products-from-bill", payload);
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || "Failed to assign products");
       }
 
       Modal.success({
@@ -205,7 +198,7 @@ const Addproduct = () => {
       });
     } catch (error) {
       console.error("Failed to confirm products:", error.message);
-      alert("เกิดข้อผิดพลาดในการยืนยัน: " + error.message);
+      alert("เกิดข้อผิดพลาดในการยืนยัน: " + (error.response?.data?.error || error.message));
     }
   };
 
@@ -213,7 +206,10 @@ const Addproduct = () => {
     navigate(-1);
   };
 
-  const products = billData?.items.map((item) => item.product) || [];
+  const productsWithQuantity = billData?.items.map((item) => ({
+    product: item.product,
+    quantity: item.quantity,
+  })) || [];
 
   return (
     <div className="flex justify-center items-center min-h-screen">
@@ -229,10 +225,10 @@ const Addproduct = () => {
             <div className="p-3 w-[983px] h-[100px] relative bg-gray-100 mb-4">
               <h1 className="text-black text-sm font-semibold mb-4">รายละเอียดบิล</h1>
               <p className="text-black text-xs mb-2">
-                วันที่: {billData?.inDate ? formatDate(billData.inDate) : "6 มีนาคม 2568"}
+                วันที่: {billData?.created_at ? formatDate(billData.created_at) : "6 มีนาคม 2568"}
               </p>
               <p className="text-black text-xs">
-                จำนวนรายการสินค้า: <span>{billData?.uniqueProductCount || "0"}</span> <span>รายการ</span>
+                จำนวนรายการสินค้า: <span>{billData?.items.length || "0"}</span> <span>รายการ</span>
               </p>
             </div>
           </div>
@@ -384,9 +380,9 @@ const Addproduct = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((product) => (
+                  {productsWithQuantity.map(({ product, quantity }, index) => (
                     <tr
-                      key={product.productId}
+                      key={product.productId || index}
                       className={`border-b border-gray-300 hover:bg-gray-50 cursor-pointer ${
                         selectedProduct === product.productId ? "bg-blue-100" : ""
                       }`}
@@ -394,7 +390,7 @@ const Addproduct = () => {
                     >
                       <td className="p-2 text-sm text-center">{product.productId}</td>
                       <td className="p-2 text-sm text-center">{product.name}</td>
-                      <td className="p-2 text-sm text-center">{product.quantity}</td>
+                      <td className="p-2 text-sm text-center">{quantity || "N/A"}</td>
                       <td className="p-2 text-sm text-center">
                         {storedProducts[product.productId]?.storedQuantity || 0}
                       </td>

@@ -11,12 +11,13 @@ const Account = () => {
     email: "",
     phoneNumber: "",
     profilePicture: "",
-    employeeId: "", // เพิ่ม employeeId
+    employeeId: "",
+    role: "", // เพิ่ม role ใน state เริ่มต้น
   });
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (!token) {
       console.log("No token found, redirecting to login");
       navigate("/Login");
@@ -36,7 +37,8 @@ const Account = () => {
         email: userData.email || "",
         phoneNumber: userData.phoneNumber || "",
         profilePicture: userData.profilePicture || "",
-        employeeId: userData.employeeId || "N/A", // เพิ่ม employeeId
+        employeeId: userData.employeeId || "N/A",
+        role: userData.role || "", // เพิ่ม role
       });
 
       console.log("Fetched Profile Data:", userData);
@@ -45,7 +47,7 @@ const Account = () => {
       console.error("Error fetching profile:", error);
       if (error.response?.status === 401) {
         console.log("Unauthorized, redirecting to login");
-        localStorage.removeItem("token");
+        localStorage.removeItem("authToken");
         navigate("/Login");
       }
     } finally {
@@ -65,10 +67,10 @@ const Account = () => {
           lastName: profile.lastName,
           department: profile.department,
           email: profile.email,
-          phone: profile.phoneNumber,
+          phoneNumber: profile.phoneNumber, // แก้จาก phone เป็น phoneNumber
           profilePicture: profile.profilePicture,
-          employeeId: profile.employeeId, // ส่ง employeeId
-          role: profile.role, // หากมีใน response
+          employeeId: profile.employeeId,
+          role: profile.role,
         }
       }
     });
@@ -77,21 +79,13 @@ const Account = () => {
   return (
     <div className="mt-[30px] flex justify-center">
       <div className="w-full max-w-[1013px]">
-        {/* Title */}
         <div className="flex items-center justify-start space-x-4">
           <h1 className="text-black text-2xl font-medium mb-[30px]">
             Profile detail
           </h1>
         </div>
-        <div
-          style={{
-            height: "1px",
-            backgroundColor: "#dcdcdc",
-            margin: "10px 0",
-          }}
-        ></div>
+        <div style={{ height: "1px", backgroundColor: "#dcdcdc", margin: "10px 0" }}></div>
 
-        {/* Profile */}
         <div className="flex items-center space-x-4 mt-10 mb-10">
           <h1 className="text-black text-lg font-medium">Profile</h1>
           <div className="flex items-center space-x-4 ml-auto mr-auto">
@@ -108,9 +102,7 @@ const Account = () => {
                 }}
               />
             ) : (
-              <div
-                className="w-[75px] h-[75px] rounded-full bg-gray-400 flex items-center justify-center text-white font-bold"
-              >
+              <div className="w-[75px] h-[75px] rounded-full bg-gray-400 flex items-center justify-center text-white font-bold">
                 {profile.firstName.charAt(0)}
               </div>
             )}
@@ -123,61 +115,22 @@ const Account = () => {
           </div>
         </div>
 
-        <div
-          style={{
-            width: "1013px",
-            height: "1px",
-            backgroundColor: "#dcdcdc",
-            margin: "10px auto",
-          }}
-        ></div>
-
-        {/* Employee ID */}
+        <div style={{ width: "1013px", height: "1px", backgroundColor: "#dcdcdc", margin: "10px auto" }}></div>
         <div className="flex items-center justify-between w-full mt-10 mb-10">
           <h1 className="text-black text-lg font-medium">Employee ID</h1>
           <p className="text-black mx-auto">{profile.employeeId}</p>
         </div>
-
-        <div
-          style={{
-            width: "1013px",
-            height: "1px",
-            backgroundColor: "#dcdcdc",
-            margin: "10px auto",
-          }}
-        ></div>
-
-        {/* Department */}
+        <div style={{ width: "1013px", height: "1px", backgroundColor: "#dcdcdc", margin: "10px auto" }}></div>
         <div className="flex items-center justify-between w-full mt-10 mb-10">
           <h1 className="text-black text-lg font-medium">Department</h1>
           <p className="text-black mx-auto">{profile.department || "N/A"}</p>
         </div>
-
-        <div
-          style={{
-            width: "1013px",
-            height: "1px",
-            backgroundColor: "#dcdcdc",
-            margin: "10px auto",
-          }}
-        ></div>
-
-        {/* Email */}
+        <div style={{ width: "1013px", height: "1px", backgroundColor: "#dcdcdc", margin: "10px auto" }}></div>
         <div className="flex items-center justify-between w-full mt-10 mb-10">
           <h1 className="text-black text-lg font-medium">Email</h1>
           <p className="text-black mx-auto">{profile.email || "N/A"}</p>
         </div>
-
-        <div
-          style={{
-            width: "1013px",
-            height: "1px",
-            backgroundColor: "#dcdcdc",
-            margin: "10px auto",
-          }}
-        ></div>
-
-        {/* Phone Number */}
+        <div style={{ width: "1013px", height: "1px", backgroundColor: "#dcdcdc", margin: "10px auto" }}></div>
         <div className="flex items-center justify-between w-full mt-10 mb-10">
           <h1 className="text-black text-lg font-medium">Phone Number</h1>
           <p className="text-black mx-auto">{profile.phoneNumber || "N/A"}</p>

@@ -3,6 +3,7 @@ import { LocationContext } from "../Context/LocationContext";
 import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Spin, message } from "antd";
 
 const ProductLocation = () => {
   const {
@@ -21,6 +22,8 @@ const ProductLocation = () => {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [billNumber, setBillNumber] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [loadingTable, setLoadingTable] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productsData, setProductsData] = useState([]);
   const [otherLocations, setOtherLocations] = useState([]);
@@ -35,10 +38,15 @@ const ProductLocation = () => {
     paddingWidth
   }rem`;
 
+  // กำหนด base URL ของ backend และ default image
+  const BASE_URL = "http://172.18.43.37:3000"; // URL ของ backend
+  const DEFAULT_IMAGE_URL = "https://picsum.photos/40/40"; // Fallback image
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (tableRef.current && !tableRef.current.contains(event.target)) {
         setSelectedCell(null);
+        setProductsData([]);
       }
     };
     document.addEventListener("click", handleClickOutside);
@@ -46,65 +54,125 @@ const ProductLocation = () => {
   }, [setSelectedCell]);
 
   const fetchCellProducts = async (cellId) => {
+    setLoadingTable(true);
     try {
-      const response = await axios.get("http://172.18.43.37:3000/api/cell/products");
+      const response = await axios.get("http://172.18.43.37:3000/api/cell/cellsAll");
+      console.log("API Response from cellsAll:", response.data);
+
       if (!response.data.success) throw new Error("Invalid API response");
 
-      const cellProducts = response.data.data
-        .filter((product) => {
-          const productLocation = product.location.subCell
-            ? `${product.location.cellId}-${product.location.subCell}`
-            : product.location.cellId;
-          return productLocation === cellId;
-        })
-        .map((item, index) => ({
-          key: `${item.productId}-${index}`,
-          no: index + 1,
-          id: item.productId,
-          type: item.type,
-          name: item.name,
-          image: item.image,
-          location: item.location.subCell ? `${item.location.cellId}-${item.location.subCell}` : item.location.cellId,
-          in: item.inDate,
-          end: item.endDate,
-          quantity: item.quantity,
-        }));
+      const cellProducts = [];
+      response.data.data.forEach((cell) => {
+        const formatProduct = (product, location) => {
+          // ถ้ามี image จาก API ให้เพิ่ม BASE_URL เพื่อสร้าง full URL
+          const imageUrl =
+            product.product.image && typeof product.product.image === "string"
+              ? `${BASE_URL}${product.product.image}`
+              : DEFAULT_IMAGE_URL;
 
+          return {
+            key: `${product.product.productId}-${location}-${Math.random()}`,
+            no: cellProducts.length + 1,
+            id: product.product.productId,
+            type: product.product.type || "N/A",
+            name: product.product.name || "Unknown",
+            image: imageUrl,
+            location: location,
+            in: product.inDate ? new Date(product.inDate).toISOString().split("T")[0] : "N/A",
+            end: product.endDate ? new Date(product.endDate).toISOString().split("T")[0] : "N/A",
+            quantity: product.quantity || 0,
+          };
+        };
+
+        if (cell.cellId === cellId && cell.products && cell.products.length > 0) {
+          cell.products.forEach((product) => {
+            cellProducts.push(formatProduct(product, cell.cellId));
+          });
+        }
+
+        if (cell.subCellsA && cell.subCellsA.products && cell.subCellsA.products.length > 0) {
+          const subCellAId = `${cell.cellId}-A`;
+          if (subCellAId === cellId) {
+            cell.subCellsA.products.forEach((product) => {
+              cellProducts.push(formatProduct(product, subCellAId));
+            });
+          }
+        }
+
+        if (cell.subCellsB && cell.subCellsB.products && cell.subCellsB.products.length > 0) {
+          const subCellBId = `${cell.cellId}-B`;
+          if (subCellBId === cellId) {
+            cell.subCellsB.products.forEach((product) => {
+              cellProducts.push(formatProduct(product, subCellBId));
+            });
+          }
+        }
+      });
+
+      console.log("Formatted Products:", cellProducts);
       setProductsData(cellProducts);
     } catch (error) {
       console.error("Error fetching cell products:", error.message);
       setProductsData([]);
+      message.error("เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า");
+    } finally {
+      setLoadingTable(false);
     }
   };
 
   const fetchOtherLocations = async (productId) => {
     try {
-      const response = await axios.get("http://172.18.43.37:3000/api/cell/products");
+      const response = await axios.get("http://172.18.43.37:3000/api/cell/cellsAll");
+      console.log("API Response for other locations:", response.data);
+
       if (!response.data.success) throw new Error("Invalid API response");
 
-      const otherLocationsData = response.data.data
-        .filter((product) => {
-          const productLocation = product.location.subCell
-            ? `${product.location.cellId}-${product.location.subCell}`
-            : product.location.cellId;
-          return product.productId === productId && productLocation !== selectedCell;
-        })
-        .map((product) => ({
-          productId: product.productId,
-          name: product.name,
-          image: product.image,
-          location: product.location.subCell
-            ? `${product.location.cellId}-${product.location.subCell}`
-            : product.location.cellId,
-          quantity: product.quantity,
-        }));
+      const otherLocationsData = [];
+      response.data.data.forEach((cell) => {
+        const addProductLocation = (product, location) => {
+          if (product.product.productId === productId && location !== selectedCell) {
+            const imageUrl =
+              product.product.image && typeof product.product.image === "string"
+                ? `${BASE_URL}${product.product.image}`
+                : DEFAULT_IMAGE_URL;
 
+            otherLocationsData.push({
+              productId: product.product.productId,
+              name: product.product.name || "Unknown",
+              image: imageUrl,
+              location: location,
+              quantity: product.quantity || 0,
+            });
+          }
+        };
+
+        if (cell.products && cell.products.length > 0) {
+          cell.products.forEach((product) => {
+            addProductLocation(product, cell.cellId);
+          });
+        }
+
+        if (cell.subCellsA && cell.subCellsA.products && cell.subCellsA.products.length > 0) {
+          cell.subCellsA.products.forEach((product) => {
+            addProductLocation(product, `${cell.cellId}-A`);
+          });
+        }
+
+        if (cell.subCellsB && cell.subCellsB.products && cell.subCellsB.products.length > 0) {
+          cell.subCellsB.products.forEach((product) => {
+            addProductLocation(product, `${cell.cellId}-B`);
+          });
+        }
+      });
+
+      console.log("Other Locations:", otherLocationsData);
       setOtherLocations(otherLocationsData);
       setIsSearchModalOpen(true);
     } catch (error) {
       console.error("Error fetching other locations:", error.message);
       setOtherLocations([]);
       setIsSearchModalOpen(true);
+      message.error("เกิดข้อผิดพลาดในการดึงตำแหน่งอื่น");
     }
   };
 
@@ -116,21 +184,42 @@ const ProductLocation = () => {
       return;
     }
 
+    setLoading(true);
+    setError("");
+
     try {
-      const response = await axios.get(`http://172.18.43.37:3000/api/bill/bills/${billNumber}`);
-      const billData = response.data.bill;
+      const token = localStorage.getItem("authToken");
+      if (!token) throw new Error("กรุณาเข้าสู่ระบบ");
+
+      const response = await axios.get("http://172.18.43.37:3000/api/bill/allBills/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.data.success) throw new Error("Invalid API response");
+
+      const billData = response.data.data.find((bill) => bill.billNumber === billNumber);
       if (!billData) {
         setError("ไม่พบเลขที่บิลนี้ในระบบ");
+        setLoading(false);
         return;
       }
 
       setError("");
       setIsModalOpen(false);
-      navigate("/Addproduct", { state: { billData } });
-      setBillNumber("");
+      setLoading(false);
+      message.success("สำเร็จ! กำลังเปลี่ยนหน้า...");
+      setTimeout(() => {
+        navigate("/Addproduct", { state: { billData } });
+        setBillNumber("");
+      }, 1500);
     } catch (error) {
-      setError("ไม่พบเลขที่บิลนี้ในระบบหรือเกิดข้อผิดพลาด");
-      console.error("Error validating bill number:", error);
+      setLoading(false);
+      setError(
+        error.response?.status === 401
+          ? "กรุณาเข้าสู่ระบบใหม่"
+          : error.message || "เกิดข้อผิดพลาดในการตรวจสอบเลขที่บิล"
+      );
+      console.error("Error validating bill number:", error.message);
     }
   };
 
@@ -173,6 +262,11 @@ const ProductLocation = () => {
     }
   };
 
+  // ฟังก์ชันจัดการเมื่อรูปภาพโหลดไม่สำเร็จ
+  const handleImageError = (e) => {
+    e.target.src = DEFAULT_IMAGE_URL;
+  };
+
   return (
     <div className="p-4 max-w-6xl mx-auto w-full mt-[30px]">
       <div className="mb-6 flex items-center justify-end">
@@ -187,38 +281,43 @@ const ProductLocation = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-          <div className="bg-white p-8 rounded-lg shadow-xl w-[450px]">
-            <h2 className="text-xl font-bold mb-6 text-gray-800">
-              กรุณาใส่เลขที่บิลสินค้า
-            </h2>
-            <input
-              type="text"
-              value={billNumber}
-              onChange={(e) => {
-                setBillNumber(e.target.value);
-                setError("");
-              }}
-              className={`w-full p-3 border ${
-                error ? "border-red-500" : "border-gray-300"
-              } rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-[#006ec4] transition-all`}
-              placeholder="เลขที่บิลสินค้า"
-            />
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-            <div className="flex justify-end gap-4">
-              <button
-                onClick={handleCancel}
-                className="px-5 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-700 font-medium transition-all"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={handleSubmit}
-                className="px-5 py-2 bg-[#006ec4] text-white rounded-lg hover:bg-[#006ec4] hover:brightness-110 font-medium transition-all"
-              >
-                ตกลง
-              </button>
+          <Spin spinning={loading} tip="กำลังตรวจสอบ...">
+            <div className="bg-white p-8 rounded-lg shadow-xl w-[450px]">
+              <h2 className="text-xl font-bold mb-6 text-gray-800">
+                กรุณาใส่เลขที่บิลสินค้า
+              </h2>
+              <input
+                type="text"
+                value={billNumber}
+                onChange={(e) => {
+                  setBillNumber(e.target.value);
+                  setError("");
+                }}
+                className={`w-full p-3 border ${
+                  error ? "border-red-500" : "border-gray-300"
+                } rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-[#006ec4] transition-all`}
+                placeholder="เลขที่บิลสินค้า"
+                disabled={loading}
+              />
+              {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={handleCancel}
+                  className="px-5 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-700 font-medium transition-all"
+                  disabled={loading}
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="px-5 py-2 bg-[#006ec4] text-white rounded-lg hover:bg-[#006ec4] hover:brightness-110 font-medium transition-all"
+                  disabled={loading}
+                >
+                  ตกลง
+                </button>
+              </div>
             </div>
-          </div>
+          </Spin>
         </div>
       )}
 
@@ -266,6 +365,7 @@ const ProductLocation = () => {
                         : `${getBackgroundColor(status, isSelected)} border border-gray-200 rounded-sm hover:bg-opacity-75 cursor-pointer`
                     }`}
                     onClick={() => {
+                      console.log("Clicked Cell:", cellId);
                       handleCellClick(row, col);
                       setSelectedCell(cellId);
                       if (!hasSubCells) fetchCellProducts(cellId);
@@ -289,6 +389,7 @@ const ProductLocation = () => {
                             style={{ width: `${baseColumnWidth / 2}rem` }}
                             onClick={(e) => {
                               e.stopPropagation();
+                              console.log("Clicked SubCell:", subCell.id);
                               handleCellClick(row, col);
                               setSelectedCell(subCell.id);
                               fetchCellProducts(subCell.id);
@@ -350,15 +451,14 @@ const ProductLocation = () => {
         <div className="flex items-center">
           <p className="opacity-70 text-black text-lg font-bold">สินค้าใน</p>
           <input
-            className="w-[65px] h-[25px] bg-[#d9d9d9]/50 border border-black ml-2"
+            className="w-[65px] h-[25px] ml-2"
             type="text"
             value={selectedCell || ""}
             readOnly
           />
         </div>
-        
-        {/* Header */}
-        <div className="px-4 py-4 w-full h-[60px] mb-4 bg-gray-100 rounded-t-lg">
+
+        <div className="px-4 py-4 w-full h-[60px] mb-4 bg-transparent rounded-t-lg">
           <div className="flex items-center justify-between">
             <p className="w-[60px] text-center font-semibold">No</p>
             <p className="w-[120px] text-center font-semibold">ID</p>
@@ -372,8 +472,11 @@ const ProductLocation = () => {
           </div>
         </div>
 
-        {/* Data */}
-        {productsData.length > 0 ? (
+        {loadingTable ? (
+          <div className="text-center py-10">
+            <Spin tip="กำลังโหลดข้อมูล..." />
+          </div>
+        ) : productsData.length > 0 ? (
           productsData.map((item) => (
             <div
               key={item.key}
@@ -384,7 +487,12 @@ const ProductLocation = () => {
                 <div className="w-[120px] text-center">{item.id}</div>
                 <div className="w-[100px] text-center">{item.type}</div>
                 <div className="w-[220px] flex items-center justify-center text-center">
-                  <img src={item.image} alt={item.name} className="w-10 h-10 rounded-full mr-2" />
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-10 h-10 rounded-full mr-2"
+                    onError={handleImageError}
+                  />
                   <span>{item.name}</span>
                 </div>
                 <div className="w-[100px] text-center">{item.location}</div>
@@ -416,6 +524,7 @@ const ProductLocation = () => {
                   src={selectedProduct.image}
                   alt={selectedProduct.name}
                   className="w-[150px] h-[150px] object-contain"
+                  onError={handleImageError}
                 />
                 <div className="flex-1">
                   <p className="text-lg font-semibold">Name: {selectedProduct.name}</p>

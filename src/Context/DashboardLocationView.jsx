@@ -15,18 +15,27 @@ const DashboardLocationView = () => {
     }
   };
 
-  const baseColumnWidth = 9; // ความกว้างต่อคอลัมน์ (rem)
-  const gapWidth = 0.25; // ช่องว่างระหว่างคอลัมน์ (rem)
-  const paddingWidth = 0.5; // padding รอบตาราง (rem)
-  const maxColumns = Math.floor((875 - paddingWidth * 16) / (baseColumnWidth + gapWidth)); // คำนวณคอลัมน์สูงสุดใน 875px (แปลง rem เป็น px: 1rem = 16px)
-  const columnWidth = `${baseColumnWidth}rem`;
-  const totalWidth = columns.length > maxColumns 
-    ? `${maxColumns * baseColumnWidth + (maxColumns - 1) * gapWidth + paddingWidth}rem`
-    : `${columns.length * baseColumnWidth + (columns.length > 1 ? (columns.length - 1) * gapWidth : 0) + paddingWidth}rem`;
+  const baseColumnWidth = 7;
+  const gapWidth = 0.25;
+  const paddingWidth = 0.5;
+  const rowHeight = 3;
+
+  // คำนวณความกว้างรวมจากจำนวนคอลัมน์
+  let totalWidth = columns.length * baseColumnWidth + (columns.length - 1) * gapWidth + paddingWidth * 2;
+  const maxWidth = 52.6875; // ความกว้างสูงสุดใน rem (875px - 2rem padding)
+  totalWidth = Math.min(totalWidth, maxWidth);
+
+  // คำนวณความสูงรวมจากจำนวนแถว + หัวตาราง + legend
+  let totalHeight = rows.length * rowHeight + 2 + 2; // 2rem สำหรับส่วนล่าง + 2rem สำหรับ legend
+  const maxHeight = 19.4375; // ความสูงสูงสุดใน rem (343px - 2rem padding)
+  totalHeight = Math.min(totalHeight, maxHeight);
 
   return (
-    <div className="p-2 w-full h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto"> {/* ให้ตารางเลื่อนเฉพาะแนวตั้ง */}
+    <div
+      className="p-1 flex flex-col overflow-auto"
+      style={{ width: `${totalWidth}rem`, height: `${totalHeight}rem` }}
+    >
+      <div className="flex-1">
         <div className="flex">
           <div className="flex flex-col justify-between mr-2 pt-1 shrink-0">
             {[...rows].reverse().map((row) => (
@@ -39,23 +48,22 @@ const DashboardLocationView = () => {
             <div
               className="grid gap-1 border border-gray-200 rounded-md bg-white p-1 box-border"
               style={{
-                gridTemplateColumns: `repeat(${Math.min(columns.length, maxColumns)}, ${columnWidth})`,
-                width: totalWidth,
+                gridTemplateColumns: `repeat(${columns.length}, ${baseColumnWidth}rem)`,
               }}
             >
               {[...rows].reverse().map((row) =>
-                columns.slice(0, maxColumns).map((col) => { // จำกัดจำนวนคอลัมน์
+                columns.map((col) => {
                   const cellId = `${col}-${row}`;
                   const cell = newCells[col]?.find((c) => c.row === row);
                   const status = cellStatus[cellId] !== undefined ? cellStatus[cellId] : 0;
                   const hasSubCells = cell?.subCells?.length > 0;
 
-                  if (!cell) return <div key={cellId} className="h-14" />;
+                  if (!cell) return <div key={cellId} className="h-12" />;
 
                   return (
                     <div
                       key={cellId}
-                      className={`h-14 relative ${
+                      className={`h-12 relative ${
                         hasSubCells
                           ? "flex space-x-1 bg-transparent"
                           : `${getCellColor(status)} border border-gray-200 rounded-sm`
@@ -65,9 +73,10 @@ const DashboardLocationView = () => {
                         cell.subCells.map((subCell) => (
                           <div
                             key={subCell.id}
-                            className={`h-14 flex-1 ${getCellColor(cellStatus[subCell.id] || 0)} border border-gray-200 rounded-sm flex items-center justify-center relative`}
+                            className={`h-12 flex-1 ${getCellColor(cellStatus[subCell.id] || 0)} border border-gray-200 rounded-sm flex items-center justify-center relative`}
                             style={{ width: `${baseColumnWidth / 2 - 0.25}rem` }}
                           >
+                            {/* ปรับจาก text-[10px] เป็น text-xs */}
                             <div className="text-xs">{subCell.id.split("-").slice(-1)[0]}</div>
                           </div>
                         ))
@@ -84,34 +93,16 @@ const DashboardLocationView = () => {
           </div>
         </div>
       </div>
-      <div className="flex mt-1 px-1 gap-1" style={{ width: totalWidth }}>
-        {columns.slice(0, maxColumns).map((col) => ( // จำกัดคอลัมน์ด้านล่างด้วย
+      <div className="flex mt-1 px-1 gap-1">
+        {columns.map((col) => (
           <div
             key={col}
             className="flex items-center justify-center text-gray-600 text-xs"
-            style={{ width: columnWidth, minWidth: columnWidth }}
+            style={{ width: `${baseColumnWidth}rem`, minWidth: `${baseColumnWidth}rem` }}
           >
             {col}
           </div>
         ))}
-      </div>
-      <div className="flex items-center justify-start mt-2 space-x-10 ml-[20px]">
-      <div className="flex items-center">
-                  <div className="w-4 h-4 bg-white border border-gray-200 rounded-full mr-2"></div>
-                  <span className="text-sm">(ว่าง)</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-green-500 border border-gray-200 rounded-full mr-2"></div>
-                  <span className="text-sm">(ใช้งาน)</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-red-500 border border-gray-200 rounded-full mr-2"></div>
-                  <span className="text-sm">(เต็ม)</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-4 h-4 bg-gray-500 border border-gray-200 rounded-full mr-2"></div>
-                  <span className="text-sm">(ปิดการใช้งาน)</span>
-                </div>
       </div>
     </div>
   );

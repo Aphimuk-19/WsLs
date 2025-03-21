@@ -2,27 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { Camera } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { message } from 'antd';
 
 const EditProfilePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('authToken');
 
   const { userId, userData } = location.state || {};
   const [currentUser, setCurrentUser] = useState(null);
-
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     department: '',
     email: '',
-    phone: '',
+    phoneNumber: 'ไม่ระบุ', // Default เป็น "ไม่ระบุ"
     employeeId: '',
     role: '',
   });
-  const [initialData, setInitialData] = useState(null);
   const [profileImageFile, setProfileImageFile] = useState(null);
-  const [profileImageUrl, setProfileImageUrl] = useState(null); // เปลี่ยนค่าเริ่มต้นเป็น null
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,57 +31,44 @@ const EditProfilePage = () => {
     const fetchCurrentUser = async () => {
       try {
         if (!token) {
-          throw new Error('กรุณา login ใหม่: ไม่พบ token');
+          message.error('กรุณา login ใหม่: ไม่พบ token');
+          navigate('/Login');
+          return;
         }
         const response = await axios.get('http://172.18.43.37:3000/api/users/profile/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log('Current User Data:', response.data.data);
         setCurrentUser(response.data.data);
       } catch (err) {
         console.error('Fetch Current User Error:', err.response?.data || err.message);
-        setError('ไม่สามารถดึงข้อมูลผู้ใช้: ' + (err.response?.data?.message || err.message));
+        message.error('ไม่สามารถดึงข้อมูลผู้ใช้: ' + (err.response?.data?.message || err.message));
       }
     };
-
     fetchCurrentUser();
-  }, [token]);
+  }, [token, navigate]);
 
   // ตั้งค่า formData
   useEffect(() => {
-    if (userData) {
-      setFormData({
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        department: userData.department || '',
-        email: userData.email || '',
-        phone: userData.phone || userData.phoneNumber || '',
-        employeeId: userData.employeeId || '',
-        role: userData.role || '',
-      });
-      setProfileImageUrl(userData.profilePicture || null); // ถ้าไม่มีรูปให้เป็น null
-      setInitialData(userData);
-    } else if (currentUser && !userId) {
-      setFormData({
-        firstName: currentUser.firstName || '',
-        lastName: currentUser.lastName || '',
-        department: currentUser.department || '',
-        email: currentUser.email || '',
-        phone: currentUser.phoneNumber || '',
-        employeeId: currentUser.employeeId || '',
-        role: currentUser.role || '',
-      });
-      setProfileImageUrl(currentUser.profilePicture || null); // ถ้าไม่มีรูปให้เป็น null
-      setInitialData(currentUser);
-    } else if (userId && currentUser) {
-      if (!userData) {
-        setError('ไม่พบข้อมูลผู้ใช้สำหรับแก้ไข');
-        setTimeout(() => navigate('/ManageUsers'), 2000);
-      }
+    console.log('Received userData from location.state:', userData); // Debug: ดูข้อมูลจาก Account
+    const data = userId && userData ? userData : currentUser; // ถ้ามี userId ใช้ userData ไม่เช่นนั้นใช้ currentUser
+    if (data) {
+      const newFormData = {
+        firstName: data.firstName || '',
+        lastName: data.lastName || '',
+        department: data.department || '',
+        email: data.email || '',
+        phoneNumber: data.phoneNumber || 'ไม่ระบุ', // Default เป็น "ไม่ระบุ"
+        employeeId: data.employeeId || '',
+        role: data.role || '',
+      };
+      console.log('Setting formData with:', newFormData);
+      setFormData(newFormData);
+      setProfileImageUrl(data.profilePicture || null);
     } else {
-      setError('ไม่พบข้อมูลผู้ใช้');
-      setTimeout(() => navigate('/Account'), 2000);
+      console.log('No data available to set formData');
     }
-  }, [userId, userData, currentUser, navigate]);
+  }, [userId, userData, currentUser]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -109,7 +95,7 @@ const EditProfilePage = () => {
       setError('กรุณากรอกอีเมลให้ถูกต้อง');
       return;
     }
-    if (formData.phone && !/^\d{10}$/.test(formData.phone)) {
+    if (formData.phoneNumber && formData.phoneNumber !== 'ไม่ระบุ' && !/^\d{10}$/.test(formData.phoneNumber)) {
       setError('กรุณากรอกเบอร์โทรศัพท์ 10 หลัก');
       return;
     }
@@ -119,7 +105,9 @@ const EditProfilePage = () => {
 
     try {
       if (!token || !currentUser) {
-        throw new Error('กรุณา login ใหม่: ไม่พบ token หรือข้อมูลผู้ใช้');
+        message.error('กรุณา login ใหม่: ไม่พบ token หรือข้อมูลผู้ใช้');
+        navigate('/Login');
+        return;
       }
 
       const formDataToSend = new FormData();
@@ -127,81 +115,48 @@ const EditProfilePage = () => {
       formDataToSend.append('lastName', formData.lastName);
       formDataToSend.append('department', formData.department);
       formDataToSend.append('email', formData.email);
-      formDataToSend.append('phoneNumber', formData.phone);
+      formDataToSend.append('phoneNumber', formData.phoneNumber === 'ไม่ระบุ' ? '' : formData.phoneNumber);
       if (currentUser.role === 'admin' && userId) {
         formDataToSend.append('role', formData.role);
       }
-
       if (profileImageFile) {
         formDataToSend.append('profilePicture', profileImageFile);
       }
 
-      console.log('Data being sent to API:', Object.fromEntries(formDataToSend));
+      const url = currentUser.role === 'admin' && userId
+        ? `http://172.18.43.37:3000/api/users/profile/${userId}`
+        : 'http://172.18.43.37:3000/api/users/profile/me';
+      console.log('Submitting to URL:', url);
+      console.log('Form Data to Send:', Object.fromEntries(formDataToSend));
 
-      const isEditingSelf = !userId || userId === currentUser.id;
-      const url = isEditingSelf
-        ? 'http://172.18.43.37:3000/api/users/profile/me'
-        : `http://172.18.43.37:3000/api/users/profile/${userId}`;
-
-      const response = await axios.put(
-        url,
-        formDataToSend,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      console.log('Update Response:', response.data);
-
-      const updatedData = response.data.data;
-      setInitialData({
-        firstName: updatedData.firstName,
-        lastName: updatedData.lastName,
-        department: updatedData.department,
-        email: updatedData.email,
-        phone: updatedData.phoneNumber || '',
-        employeeId: updatedData.employeeId || '',
-        role: updatedData.role || '',
+      const response = await axios.put(url, formDataToSend, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
       });
-      setProfileImageUrl(updatedData.profilePicture || null);
-      setProfileImageFile(null);
+
+      console.log('Response from API:', response.data);
       setIsSaved(true);
+      message.success('บันทึกข้อมูลสำเร็จ!');
 
       setTimeout(() => {
         setIsSaved(false);
-        navigate(isEditingSelf ? '/Account' : '/ManageUsers');
+        navigate(currentUser.role === 'admin' && userId ? '/ManageUsers' : '/Account');
       }, 1500);
     } catch (err) {
       console.error('Submit Error:', err.response?.data || err.message);
-      if (err.response?.status === 401) {
-        setError('กรุณา login ใหม่: Token ไม่ถูกต้องหรือหมดอายุ');
-        setTimeout(() => {
-          localStorage.clear();
-          navigate('/login');
-        }, 2000);
-      } else if (err.response?.status === 403) {
-        setError('คุณไม่มีสิทธิ์แก้ไขข้อมูลนี้');
-      } else if (err.response?.status === 404) {
-        setError('ไม่พบผู้ใช้สำหรับอัปเดต');
-      } else {
-        setError('เกิดข้อผิดพลาดในการบันทึก: ' + (err.response?.data?.message || err.message));
-      }
+      setError('เกิดข้อผิดพลาดในการบันทึก: ' + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    navigate(userId && currentUser?.role === 'admin' ? '/ManageUsers' : '/Account');
+    navigate(currentUser?.role === 'admin' && userId ? '/ManageUsers' : '/Account');
   };
 
   if (!currentUser) return <div>Loading...</div>;
-
-  // ดึงอักษรตัวแรกของชื่อ
-  const initial = formData.firstName ? formData.firstName.charAt(0).toUpperCase() : '';
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -223,12 +178,11 @@ const EditProfilePage = () => {
                       src={profileImageUrl}
                       alt="รูปโปรไฟล์"
                       className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md"
+                      onError={() => setProfileImageUrl(null)}
                     />
                   ) : (
-                    <div
-                      className="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center text-white text-4xl font-bold border-4 border-white shadow-md"
-                    >
-                      {initial}
+                    <div className="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center text-white text-4xl font-bold border-4 border-white shadow-md">
+                      {formData.firstName.charAt(0).toUpperCase()}
                     </div>
                   )}
                   <input
@@ -302,7 +256,6 @@ const EditProfilePage = () => {
                     />
                   </div>
                 </div>
-
                 <div>
                   <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
                     แผนก
@@ -317,7 +270,6 @@ const EditProfilePage = () => {
                     disabled={loading}
                   />
                 </div>
-
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                     อีเมล
@@ -332,22 +284,21 @@ const EditProfilePage = () => {
                     disabled={loading}
                   />
                 </div>
-
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
                     เบอร์โทรศัพท์
                   </label>
                   <input
                     type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
                     onChange={handleChange}
+                    placeholder="เช่น 0123456789"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     disabled={loading}
                   />
                 </div>
-
                 {currentUser.role === 'admin' && userId && (
                   <div>
                     <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">

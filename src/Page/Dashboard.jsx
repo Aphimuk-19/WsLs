@@ -159,9 +159,29 @@ const Dashboard = () => {
       </div>
 
       {/* Additional Content Section */}
-      <div className="flex justify-center items-center gap-6 mt-[16px]">
-        <div className="w-[875px] h-[343px] bg-white rounded-[10px]">
-          <DashboardLocationView />
+      <div className="flex justify-center items-center gap-6 mt-[16px] ">
+        <div className="flex justify-center items-center gap-6 mt-[16px]">
+          <div className="w-[875px] bg-white rounded-[10px] flex flex-col justify-center items-center p-4">
+            <DashboardLocationView />
+            <div className="flex items-center justify-start mt-2 space-x-10 ml-[20px] mr-auto">
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-white border border-gray-200 rounded-full mr-2"></div>
+                <span className="text-sm">(ว่าง)</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-green-500 border border-gray-200 rounded-full mr-2"></div>
+                <span className="text-sm">(ใช้งาน)</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-red-500 border border-gray-200 rounded-full mr-2"></div>
+                <span className="text-sm">(เต็ม)</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-4 bg-gray-500 border border-gray-200 rounded-full mr-2"></div>
+                <span className="text-sm">(ปิดการใช้งาน)</span>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="w-[478px] h-[343px] bg-white rounded-[10px]">
           <h1 className="opacity-70 text-[#030229] text-lg font-bold p-5">

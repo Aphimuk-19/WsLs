@@ -28,6 +28,7 @@ const HeaderManageLocation = () => {
             activeBoxes: result.data.activeBoxes,
             disabledBoxes: result.data.disabledBoxes,
             inactiveBoxes: result.data.inactiveBoxes,
+            lastUpdate: result.data.lastUpdate,
           });
         } else {
           console.error("Failed to fetch summary:", result.error);
@@ -233,7 +234,7 @@ const HeaderManageLocation = () => {
           </div>
           <div className="p-6">
             <h1 className="opacity-70 text-[#030229] text-[22px] font-extrabold">
-              01/01/68
+            {summaryData.lastUpdate}
             </h1>
             <p className="opacity-70 text-[#030229] text-sm font-normal">
               Lastupdate

@@ -30,35 +30,34 @@ const Login = () => {
       console.log("API Response:", response.data);
 
       const { token, user } = response.data;
-      if (token) {
-        localStorage.setItem("token", token);
-
-        const userRole = user && user.role ? user.role.toLowerCase() : "user";
-        const firstName = user && user.firstName ? user.firstName : "";
-        const lastName = user && user.lastName ? user.lastName : "";
-        const email = user && user.email ? user.email : "";
-
-        localStorage.setItem("role", userRole);
-        localStorage.setItem("firstName", firstName);
-        localStorage.setItem("lastName", lastName);
-        localStorage.setItem("email", email);
-
-        console.log("Stored Role:", localStorage.getItem("role"));
-        console.log("Stored FirstName:", localStorage.getItem("firstName"));
-        console.log("Stored LastName:", localStorage.getItem("lastName"));
-        console.log("Stored Email:", localStorage.getItem("email"));
-
-        message.success("ล็อกอินสำเร็จ! กำลังเปลี่ยนหน้า...");
-        setTimeout(() => {
-          navigate("/Dashboard");
-        }, 1500);
-      } else {
-        setError("ไม่ได้รับ token จาก API");
-        message.error("ไม่ได้รับ token จาก API");
+      if (!token) {
+        throw new Error("ไม่ได้รับ token จาก API");
       }
+
+      localStorage.setItem("authToken", token); // เปลี่ยนจาก "token" เป็น "authToken"
+
+      const userRole = user && user.role ? user.role.toLowerCase() : "user";
+      const firstName = user && user.firstName ? user.firstName : "";
+      const lastName = user && user.lastName ? user.lastName : "";
+      const email = user && user.email ? user.email : "";
+
+      localStorage.setItem("role", userRole);
+      localStorage.setItem("firstName", firstName);
+      localStorage.setItem("lastName", lastName);
+      localStorage.setItem("email", email);
+
+      console.log("Stored Role:", localStorage.getItem("role"));
+      console.log("Stored FirstName:", localStorage.getItem("firstName"));
+      console.log("Stored LastName:", localStorage.getItem("lastName"));
+      console.log("Stored Email:", localStorage.getItem("email"));
+
+      message.success("ล็อกอินสำเร็จ! กำลังเปลี่ยนหน้า...");
+      setTimeout(() => {
+        navigate("/Dashboard");
+      }, 1500);
     } catch (err) {
-      console.error("API Error:", err.response?.data);
-      const errorMessage = err.response?.data?.message || "Employee ID หรือรหัสผ่านไม่ถูกต้อง";
+      console.error("API Error:", err.response?.data || err.message);
+      const errorMessage = err.response?.data?.message || err.message || "Employee ID หรือรหัสผ่านไม่ถูกต้อง";
       setError(errorMessage);
       message.error(errorMessage);
     } finally {
@@ -113,7 +112,7 @@ const Login = () => {
                 ลงทะเบียน
               </Link>
               <p>หรือ</p>
-              <Link to="/PasswordResetLink" className="text-[#1565f9]"> {/* แก้ไขที่นี่ */}
+              <Link to="/PasswordResetLink" className="text-[#1565f9]">
                 ลืมรหัสผ่าน?
               </Link>
             </div>

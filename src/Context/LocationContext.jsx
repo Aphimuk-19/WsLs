@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export const LocationContext = createContext();
 
@@ -9,6 +10,7 @@ export const LocationProvider = ({ children }) => {
   const [cellStatus, setCellStatus] = useState({});
   const [selectedCell, setSelectedCell] = useState(null);
   const [isChoosingToSplit, setIsChoosingToSplit] = useState(false);
+  const navigate = useNavigate();
 
   const fetchCells = async () => {
     try {
@@ -85,6 +87,12 @@ export const LocationProvider = ({ children }) => {
   };
 
   const handleSplitCell = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     const [col, row] = selectedCell.split("-");
     const cellId = `${col}-${row}`;
 
@@ -94,13 +102,13 @@ export const LocationProvider = ({ children }) => {
       const cellExists = checkData.success && checkData.data.some((cell) => cell.cellId === cellId);
 
       if (cellExists) {
-        const updatePayload = {
-          cellId,
-          subCellChoice: "both",
-        };
+        const updatePayload = { cellId, subCellChoice: "both" };
         const updateResponse = await fetch("http://172.18.43.37:3000/api/cell/edit-subcells", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(updatePayload),
         });
 
@@ -120,7 +128,10 @@ export const LocationProvider = ({ children }) => {
         };
         const response = await fetch("http://172.18.43.37:3000/api/cell/create/cells", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         });
 
@@ -133,7 +144,6 @@ export const LocationProvider = ({ children }) => {
       setNewCells((prevCells) => {
         const updatedCells = { ...prevCells };
         if (!updatedCells[col]) updatedCells[col] = [];
-        
         const cellIndex = updatedCells[col].findIndex((c) => c.row === row);
         const newSubCells = [
           { id: `${col}-${row}-A`, status: 1 },
@@ -146,10 +156,7 @@ export const LocationProvider = ({ children }) => {
             subCells: newSubCells,
           };
         } else {
-          updatedCells[col].push({
-            row,
-            subCells: newSubCells,
-          });
+          updatedCells[col].push({ row, subCells: newSubCells });
         }
         return updatedCells;
       });
@@ -165,11 +172,21 @@ export const LocationProvider = ({ children }) => {
       await fetchCells();
     } catch (error) {
       console.error("Failed to split cell:", error.message);
-      alert("ไม่สามารถแบ่งเซลล์ได้: " + error.message);
+      if (error.message.includes("401")) {
+        localStorage.removeItem("authToken");
+        navigate("/login");
+      }
+      throw error;
     }
   };
 
   const handleAddSingleCell = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     const [col, row] = selectedCell.split("-");
     const cellId = `${col}-${row}`;
 
@@ -184,7 +201,10 @@ export const LocationProvider = ({ children }) => {
         const payload = { cellId, col, row, status: 1 };
         const response = await fetch("http://172.18.43.37:3000/api/cell/create/cells", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         });
 
@@ -201,11 +221,21 @@ export const LocationProvider = ({ children }) => {
       fetchCells();
     } catch (error) {
       console.error("Failed to add single cell:", error.message);
-      alert("ไม่สามารถสร้างเซลล์ได้: " + error.message);
+      if (error.message.includes("401")) {
+        localStorage.removeItem("authToken");
+        navigate("/login");
+      }
+      throw error;
     }
   };
 
   const handleAddCell = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     try {
       const lastColumn = columns.length > 0 ? columns[columns.length - 1] : "A";
       const currentColumnCells = newCells[lastColumn] || [];
@@ -223,7 +253,10 @@ export const LocationProvider = ({ children }) => {
       const payload = { cellId: newCellId, col: newCol, row: newRow, status: 0 };
       const response = await fetch("http://172.18.43.37:3000/api/cell/create/cells", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -244,13 +277,24 @@ export const LocationProvider = ({ children }) => {
       fetchCells();
     } catch (error) {
       console.error("Failed to add cell:", error.message);
+      if (error.message.includes("401")) {
+        localStorage.removeItem("authToken");
+        navigate("/login");
+      }
+      throw error;
     }
   };
 
   const handleCellStatusChange = async (cellId, action) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     const currentStatus = cellStatus[cellId] || 0;
     let newStatus;
-    const [col, row] = cellId.split("-").slice(0, 2); // เช่น "A-01" จาก "A-01-A"
+    const [col, row] = cellId.split("-").slice(0, 2);
     const parentCellId = `${col}-${row}`;
     const cell = newCells[col]?.find((c) => c.row === row);
     const hasSubCells = cell?.subCells?.length > 0;
@@ -267,12 +311,14 @@ export const LocationProvider = ({ children }) => {
       case "reset":
         if (currentStatus === 0) return;
         newStatus = 0;
-
         if (hasSubCells && (cellId.includes("-A") || cellId.includes("-B"))) {
           try {
             const response = await fetch("http://172.18.43.37:3000/api/cell/update-status", {
               method: "PUT",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
               body: JSON.stringify({
                 cellId,
                 status: 0,
@@ -280,7 +326,10 @@ export const LocationProvider = ({ children }) => {
               }),
             });
 
-            if (!response.ok) throw new Error("Failed to reset cell to single");
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Failed to reset cell to single: ${errorText}`);
+            }
 
             setNewCells((prevCells) => {
               const updatedCells = { ...prevCells };
@@ -307,8 +356,11 @@ export const LocationProvider = ({ children }) => {
             return;
           } catch (error) {
             console.error("Failed to reset subCells to single cell:", error.message);
-            alert("ไม่สามารถรีเซ็ตเซลล์ได้: " + error.message);
-            return;
+            if (error.message.includes("401")) {
+              localStorage.removeItem("authToken");
+              navigate("/login");
+            }
+            throw error;
           }
         }
         break;
@@ -332,18 +384,28 @@ export const LocationProvider = ({ children }) => {
     try {
       const response = await fetch("http://172.18.43.37:3000/api/cell/update-status", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ cellId, status: newStatus }),
       });
 
-      if (!response.ok) throw new Error("Failed to update status");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update status: ${errorText}`);
+      }
 
       await fetchCells();
       setSelectedCell(null);
     } catch (error) {
       console.error("Failed to update cell status:", error.message);
       setCellStatus((prevStatus) => ({ ...prevStatus, [cellId]: currentStatus }));
-      alert("ไม่สามารถอัปเดตสถานะได้: " + error.message);
+      if (error.message.includes("401")) {
+        localStorage.removeItem("authToken");
+        navigate("/login");
+      }
+      throw error;
     }
   };
 

@@ -35,9 +35,10 @@ const Sidebar = () => {
   const location = useLocation();
 
   const fetchUserProfile = async () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken"); // แก้จาก "token" เป็น "authToken"
     if (!token) {
-      console.log("No token found, skipping profile fetch");
+      console.log("No token found, redirecting to login");
+      navigate("/Login");
       return;
     }
 
@@ -53,10 +54,10 @@ const Sidebar = () => {
       setEmail(userData.email || "");
       setProfilePicture(userData.profilePicture || "");
 
-      localStorage.setItem("role", userData.role);
-      localStorage.setItem("firstName", userData.firstName);
-      localStorage.setItem("lastName", userData.lastName);
-      localStorage.setItem("email", userData.email);
+      localStorage.setItem("role", userData.role || "");
+      localStorage.setItem("firstName", userData.firstName || "");
+      localStorage.setItem("lastName", userData.lastName || "");
+      localStorage.setItem("email", userData.email || "");
 
       console.log("Fetched User Role:", userData.role);
       console.log("Fetched FirstName:", userData.firstName);
@@ -66,7 +67,7 @@ const Sidebar = () => {
     } catch (error) {
       console.error("Error fetching user profile:", error);
       if (error.response?.status === 401) {
-        localStorage.removeItem("token");
+        localStorage.removeItem("authToken"); // แก้จาก "token" เป็น "authToken"
         navigate("/Login");
       }
     }
@@ -202,7 +203,7 @@ const Sidebar = () => {
       label: "Logout",
       icon: <LogoutOutlined />,
       onClick: () => {
-        localStorage.removeItem("token");
+        localStorage.removeItem("authToken"); // แก้จาก "token" เป็น "authToken"
         localStorage.removeItem("role");
         localStorage.removeItem("firstName");
         localStorage.removeItem("lastName");
