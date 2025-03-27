@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Input, Tag, Select, Dropdown, Menu, message, Modal } from "antd";
-import { SearchOutlined, DownOutlined, DeleteFilled } from "@ant-design/icons";
+import { SearchOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -13,7 +13,7 @@ const ManageUsers = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // ดึงข้อมูลผู้ใช้จาก API
+  // Fetch user data from API
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -35,7 +35,7 @@ const ManageUsers = () => {
           image: user.profilePicture || "",
           email: user.email || "N/A",
           type: user.role || "user",
-          status: "Active",
+          status: user.userstatus === "true" ? "Active" : "Inactive", // ใช้ string comparison
           id: user.id,
           department: user.department || "N/A",
           phoneNumber: user.phoneNumber || "N/A",
@@ -53,7 +53,7 @@ const ManageUsers = () => {
     fetchUsers();
   }, [navigate]);
 
-  // ค้นหาผู้ใช้
+  // Search users
   const handleSearch = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -65,7 +65,7 @@ const ManageUsers = () => {
     setFilteredData(filtered);
   };
 
-  // เปลี่ยนประเภทผู้ใช้
+  // Change user role
   const handleTypeChange = async (key, value) => {
     try {
       const user = filteredData.find((item) => item.key === key);
@@ -76,13 +76,11 @@ const ManageUsers = () => {
         return;
       }
 
-      // ตรวจสอบว่า employeeId มีค่าไหม
       if (!user.employeeId) {
         message.error("ไม่พบ employeeId ของผู้ใช้");
         return;
       }
 
-      // เรียก API ใหม่โดยใช้ employeeId
       await axios.put(
         `http://172.18.43.37:3000/api/role/change/${user.employeeId}`,
         { role: value },
@@ -90,14 +88,10 @@ const ManageUsers = () => {
       );
 
       setFilteredData((prevData) =>
-        prevData.map((item) =>
-          item.key === key ? { ...item, type: value } : item
-        )
+        prevData.map((item) => (item.key === key ? { ...item, type: value } : item))
       );
       setOriginalData((prevData) =>
-        prevData.map((item) =>
-          item.key === key ? { ...item, type: value } : item
-        )
+        prevData.map((item) => (item.key === key ? { ...item, type: value } : item))
       );
       message.success("เปลี่ยนประเภทผู้ใช้สำเร็จ");
     } catch (error) {
@@ -106,12 +100,12 @@ const ManageUsers = () => {
     }
   };
 
-  // ลบผู้ใช้
-  const handleDelete = (key) => {
+  // Disable user
+  const handleDisable = (key) => {
     const user = filteredData.find((item) => item.key === key);
     confirm({
-      title: "ยืนยันการลบผู้ใช้",
-      content: `คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้ "${user.name}" (ID: ${user.employeeId})?`,
+      title: "ยืนยันการปิดใช้งานผู้ใช้",
+      content: `คุณแน่ใจหรือไม่ว่าต้องการปิดใช้งานผู้ใช้ "${user.name}" (ID: ${user.employeeId})?`,
       okText: "ตกลง",
       okType: "danger",
       cancelText: "ยกเลิก",
@@ -123,21 +117,76 @@ const ManageUsers = () => {
             navigate("/Login");
             return;
           }
-          await axios.delete(`http://172.18.43.37:3000/api/users/users/${user.id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setFilteredData((prevData) => prevData.filter((item) => item.key !== key));
-          setOriginalData((prevData) => prevData.filter((item) => item.key !== key));
-          message.success("ลบผู้ใช้สำเร็จ");
+
+          await axios.put(
+            `http://172.18.43.37:3000/api/users/status/${user.employeeId}`,
+            { userstatus: "false" }, // ส่ง string "false" ตาม API เดิม
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          setFilteredData((prevData) =>
+            prevData.map((item) =>
+              item.key === key ? { ...item, status: "Inactive" } : item
+            )
+          );
+          setOriginalData((prevData) =>
+            prevData.map((item) =>
+              item.key === key ? { ...item, status: "Inactive" } : item
+            )
+          );
+          message.success("ปิดใช้งานผู้ใช้สำเร็จ");
         } catch (error) {
-          console.error("Error deleting user:", error.response?.data || error.message);
-          message.error("ลบผู้ใช้ล้มเหลว: " + (error.response?.data?.message || error.message));
+          console.error("Error disabling user:", error.response?.data || error.message);
+          message.error("ปิดใช้งานผู้ใช้ล้มเหลว: " + (error.response?.data?.message || error.message));
         }
       },
     });
   };
 
-  // แก้ไขผู้ใช้
+  // Enable user
+  const handleEnable = (key) => {
+    const user = filteredData.find((item) => item.key === key);
+    confirm({
+      title: "ยืนยันการเปิดใช้งานผู้ใช้",
+      content: `คุณแน่ใจหรือไม่ว่าต้องการเปิดใช้งานผู้ใช้ "${user.name}" (ID: ${user.employeeId})?`,
+      okText: "ตกลง",
+      okType: "primary",
+      cancelText: "ยกเลิก",
+      onOk: async () => {
+        try {
+          const token = localStorage.getItem("authToken");
+          if (!token) {
+            message.error("กรุณา login ใหม่: ไม่พบ token");
+            navigate("/Login");
+            return;
+          }
+
+          await axios.put(
+            `http://172.18.43.37:3000/api/users/status/${user.employeeId}`,
+            { userstatus: "true" }, // ส่ง string "true" ตาม API เดิม
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          setFilteredData((prevData) =>
+            prevData.map((item) =>
+              item.key === key ? { ...item, status: "Active" } : item
+            )
+          );
+          setOriginalData((prevData) =>
+            prevData.map((item) =>
+              item.key === key ? { ...item, status: "Active" } : item
+            )
+          );
+          message.success("เปิดใช้งานผู้ใช้สำเร็จ");
+        } catch (error) {
+          console.error("Error enabling user:", error.response?.data || error.message);
+          message.error("เปิดใช้งานผู้ใช้ล้มเหลว: " + (error.response?.data?.message || error.message));
+        }
+      },
+    });
+  };
+
+  // Edit user
   const handleEdit = (key) => {
     const user = filteredData.find((item) => item.key === key);
     navigate("/EditProfilePage", {
@@ -157,22 +206,34 @@ const ManageUsers = () => {
     });
   };
 
-  // แสดงสถานะในตาราง
+  // Display status tag
   const getStatusTag = (status) => {
-    return <Tag color={status === "Active" ? "green" : "volcano"}>{status}</Tag>;
+    return <Tag color={status === "Active" ? "green" : "red"}>{status}</Tag>;
   };
 
-  // เมนูแก้ไขและลบ
-  const menu = (key) => (
-    <Menu>
-      <Menu.Item key="edit" onClick={() => handleEdit(key)}>
-        แก้ไข
-      </Menu.Item>
-      <Menu.Item key="delete" onClick={() => handleDelete(key)}>
-        ลบ
-      </Menu.Item>
-    </Menu>
-  );
+  // Menu for edit, disable, and enable
+  const menu = (key) => {
+    const user = filteredData.find((item) => item.key === key);
+    const isInactive = user.status === "Inactive";
+
+    return (
+      <Menu>
+        <Menu.Item key="edit" onClick={() => handleEdit(key)}>
+          แก้ไข
+        </Menu.Item>
+        {!isInactive && (
+          <Menu.Item key="disable" onClick={() => handleDisable(key)}>
+            ปิดการใช้งาน
+          </Menu.Item>
+        )}
+        {isInactive && (
+          <Menu.Item key="enable" onClick={() => handleEnable(key)}>
+            เปิดใช้งาน
+          </Menu.Item>
+        )}
+      </Menu>
+    );
+  };
 
   if (loading) return <div className="text-center py-10">กำลังโหลดข้อมูล...</div>;
 
@@ -189,16 +250,14 @@ const ManageUsers = () => {
           />
         </div>
 
-        <div className="px-4 p-4 w-full h-[60px] mb-4 bg-gray-100 rounded-[13.05px] shadow-sm">
+        <div className="px-4 p-4 w-full h-[60px] mb-4 ">
           <div className="flex space-x-6 font-medium text-gray-700">
             <p className="flex-[2] text-center">ID</p>
             <p className="flex-[3] text-center">ชื่อ</p>
             <p className="flex-[3] text-center">อีเมล</p>
             <p className="flex-[2] text-center">ประเภท</p>
             <p className="flex-[2] text-center">สถานะ</p>
-            <p className="flex-[1] text-center">
-              <DeleteFilled />
-            </p>
+            <p className="flex-[1] text-center"></p>
           </div>
         </div>
 

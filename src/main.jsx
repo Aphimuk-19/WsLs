@@ -20,6 +20,8 @@ import EditProfilePage from "./Page/EditProfilePage";
 import Addproduct from "./Page/Addproduct";
 import Requisition from "./Page/Requisition";
 import Exportpage from "./Page/Exportpage";
+import ProductTransfer from "./Page/Producttranfer";
+import TranferProduct from "./Page/TranferProduct";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -34,6 +36,7 @@ createRoot(document.getElementById("root")).render(
           <Route path="/EditProfilePage" element={<EditProfilePage />} />
           <Route path="/Addproduct" element={<Addproduct />} />
           <Route path="/Exportpage" element={<Exportpage />} />
+          <Route path="/TranferProduct" element={<TranferProduct />} />
           <Route element={<Sidebarlayout />}>
             <Route path="/Requisition" element={<Requisition />} />
             <Route path="/Dashboard" element={<Dashboard />} />
@@ -41,6 +44,7 @@ createRoot(document.getElementById("root")).render(
             <Route path="/ProductLocation" element={<ProductLocation />} />
             <Route path="/ManageUsers" element={<ManageUsers />} />
             <Route path="/Account" element={<Account />} />
+            <Route path="/ProductTransfer" element={<ProductTransfer />} />
           </Route>
         </Routes>
       </LocationProvider>

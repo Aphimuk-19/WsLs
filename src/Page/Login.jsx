@@ -12,7 +12,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault(); // ป้องกันการ refresh หน้า
     if (!employeeID || !password) {
       setError("กรุณากรอก Employee ID และรหัสผ่าน");
       return;
@@ -29,12 +30,16 @@ const Login = () => {
 
       console.log("API Response:", response.data);
 
-      const { token, user } = response.data;
+      // รองรับโครงสร้าง response ที่อาจต่างกัน
+      const token = response.data.token || response.data.accessToken || response.data.data?.token;
+      const user = response.data.user || response.data.data?.user;
+
       if (!token) {
         throw new Error("ไม่ได้รับ token จาก API");
       }
 
-      localStorage.setItem("authToken", token); // เปลี่ยนจาก "token" เป็น "authToken"
+      localStorage.setItem("authToken", token);
+      console.log("Stored Token:", localStorage.getItem("authToken"));
 
       const userRole = user && user.role ? user.role.toLowerCase() : "user";
       const firstName = user && user.firstName ? user.firstName : "";
@@ -54,6 +59,8 @@ const Login = () => {
       message.success("ล็อกอินสำเร็จ! กำลังเปลี่ยนหน้า...");
       setTimeout(() => {
         navigate("/Dashboard");
+        setEmployeeID("");
+        setPassword("");
       }, 1500);
     } catch (err) {
       console.error("API Error:", err.response?.data || err.message);
@@ -68,66 +75,56 @@ const Login = () => {
   return (
     <div className="bg-jib h-screen flex justify-center items-center">
       <Spin spinning={loading} tip="กำลังโหลด...">
-        <div className="bg-[rgba(255,255,255,0.85)] rounded-[29px] w-[700px] h-[520px] shadow-[inset_5px_5px_4px_rgba(0,0,0,0.1)] p-8">
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <p className="text-black text-[37.45px] font-bold uppercase">Login</p>
-            <img
-              className="w-[97px] h-[61.56px]"
-              src="/src/Image/Logo png.png"
-              alt="Logo"
-            />
-          </div>
-
-          <p className="text-center text-black text-lg font-normal mb-5 mt-[-10px]">
-            Warehouse Support & Location System
-          </p>
-
-          <div className="flex flex-col items-center gap-6 mt-10">
-            <Input
-              className="w-[464.94px] h-[70px] bg-[#fafafb] rounded-[18.72px]"
-              type="text"
-              placeholder=" Employee ID"
-              prefix={<UserOutlined />}
-              value={employeeID}
-              onChange={(e) => setEmployeeID(e.target.value)}
-              disabled={loading}
-            />
-
-            <Input.Password
-              className="w-[464.94px] h-[70px] bg-[#fafafb] rounded-[18.72px]"
-              placeholder=" password"
-              prefix={<LockOutlined />}
-              iconRender={(visible) =>
-                visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
-              }
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-            />
-
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-            <div className="flex items-center justify-center gap-1">
-              <Link to="/Register" className="text-[#1565f9]">
-                ลงทะเบียน
-              </Link>
-              <p>หรือ</p>
-              <Link to="/PasswordResetLink" className="text-[#1565f9]">
-                ลืมรหัสผ่าน?
-              </Link>
+        <form onSubmit={handleLogin}>
+          <div className="bg-[rgba(255,255,255,0.85)] rounded-[29px] w-[700px] h-[520px] shadow-[inset_5px_5px_4px_rgba(0,0,0,0.1)] p-8">
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <p className="text-black text-[37.45px] font-bold uppercase">Login</p>
+              <img className="w-[97px] h-[61.56px]" src="/src/Image/Logo png.png" alt="Logo" />
             </div>
-
-            <div>
-              <button
-                className="w-[158.38px] h-[63.27px] bg-[#252265] rounded-[18.72px] text-white hover:bg-[#ffffff] hover:text-[#252265] flex items-center justify-center"
-                onClick={handleLogin}
+            <p className="text-center text-black text-lg font-normal mb-5 mt-[-10px]">
+              Warehouse Support & Location System
+            </p>
+            <div className="flex flex-col items-center gap-6 mt-10">
+              <Input
+                className="w-[464.94px] h-[70px] bg-[#fafafb] rounded-[18.72px]"
+                type="text"
+                placeholder=" Employee ID"
+                prefix={<UserOutlined />}
+                value={employeeID}
+                onChange={(e) => setEmployeeID(e.target.value)}
                 disabled={loading}
-              >
-                {loading ? <Spin size="small" /> : "Login"}
-              </button>
+              />
+              <Input.Password
+                className="w-[464.94px] h-[70px] bg-[#fafafb] rounded-[18.72px]"
+                placeholder=" password"
+                prefix={<LockOutlined />}
+                iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+              />
+              {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+              <div className="flex items-center justify-center gap-1">
+                <Link to="/Register" className="text-[#1565f9]">
+                  ลงทะเบียน
+                </Link>
+                <p>หรือ</p>
+                <Link to="/PasswordResetLink" className="text-[#1565f9]">
+                  ลืมรหัสผ่าน?
+                </Link>
+              </div>
+              <div>
+                <button
+                  type="submit"
+                  className="w-[158.38px] h-[63.27px] bg-[#252265] rounded-[18.72px] text-white hover:bg-[#ffffff] hover:text-[#252265] flex items-center justify-center"
+                  disabled={loading}
+                >
+                  {loading ? <Spin size="small" /> : "Login"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </form>
       </Spin>
     </div>
   );

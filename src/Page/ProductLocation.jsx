@@ -38,13 +38,18 @@ const ProductLocation = () => {
     paddingWidth
   }rem`;
 
-  // กำหนด base URL ของ backend และ default image
-  const BASE_URL = "http://172.18.43.37:3000"; // URL ของ backend
-  const DEFAULT_IMAGE_URL = "https://picsum.photos/40/40"; // Fallback image
+  const BASE_URL = "http://172.18.43.37:3000";
+  const DEFAULT_IMAGE_URL = "https://picsum.photos/40/40";
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (tableRef.current && !tableRef.current.contains(event.target)) {
+      if (
+        tableRef.current &&
+        !tableRef.current.contains(event.target) &&
+        !event.target.closest(".modal") &&
+        !event.target.closest(".search-icon")
+      ) {
+        console.log("handleClickOutside triggered", event.target);
         setSelectedCell(null);
         setProductsData([]);
       }
@@ -56,7 +61,16 @@ const ProductLocation = () => {
   const fetchCellProducts = async (cellId) => {
     setLoadingTable(true);
     try {
-      const response = await axios.get("http://172.18.43.37:3000/api/cell/cellsAll");
+      const token = localStorage.getItem("authToken");
+      if (!token) throw new Error("กรุณาเข้าสู่ระบบ");
+
+      const response = await axios.get(
+        "http://172.18.43.37:3000/api/cell/cellsAll",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       console.log("API Response from cellsAll:", response.data);
 
       if (!response.data.success) throw new Error("Invalid API response");
@@ -64,7 +78,6 @@ const ProductLocation = () => {
       const cellProducts = [];
       response.data.data.forEach((cell) => {
         const formatProduct = (product, location) => {
-          // ถ้ามี image จาก API ให้เพิ่ม BASE_URL เพื่อสร้าง full URL
           const imageUrl =
             product.product.image && typeof product.product.image === "string"
               ? `${BASE_URL}${product.product.image}`
@@ -78,19 +91,31 @@ const ProductLocation = () => {
             name: product.product.name || "Unknown",
             image: imageUrl,
             location: location,
-            in: product.inDate ? new Date(product.inDate).toISOString().split("T")[0] : "N/A",
-            end: product.endDate ? new Date(product.endDate).toISOString().split("T")[0] : "N/A",
+            in: product.inDate
+              ? new Date(product.inDate).toISOString().split("T")[0]
+              : "N/A",
+            end: product.endDate
+              ? new Date(product.endDate).toISOString().split("T")[0]
+              : "N/A",
             quantity: product.quantity || 0,
           };
         };
 
-        if (cell.cellId === cellId && cell.products && cell.products.length > 0) {
+        if (
+          cell.cellId === cellId &&
+          cell.products &&
+          cell.products.length > 0
+        ) {
           cell.products.forEach((product) => {
             cellProducts.push(formatProduct(product, cell.cellId));
           });
         }
 
-        if (cell.subCellsA && cell.subCellsA.products && cell.subCellsA.products.length > 0) {
+        if (
+          cell.subCellsA &&
+          cell.subCellsA.products &&
+          cell.subCellsA.products.length > 0
+        ) {
           const subCellAId = `${cell.cellId}-A`;
           if (subCellAId === cellId) {
             cell.subCellsA.products.forEach((product) => {
@@ -99,7 +124,11 @@ const ProductLocation = () => {
           }
         }
 
-        if (cell.subCellsB && cell.subCellsB.products && cell.subCellsB.products.length > 0) {
+        if (
+          cell.subCellsB &&
+          cell.subCellsB.products &&
+          cell.subCellsB.products.length > 0
+        ) {
           const subCellBId = `${cell.cellId}-B`;
           if (subCellBId === cellId) {
             cell.subCellsB.products.forEach((product) => {
@@ -113,8 +142,14 @@ const ProductLocation = () => {
       setProductsData(cellProducts);
     } catch (error) {
       console.error("Error fetching cell products:", error.message);
-      setProductsData([]);
-      message.error("เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า");
+      if (error.response?.status === 401) {
+        message.error("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+        localStorage.removeItem("authToken");
+        setTimeout(() => navigate("/login"), 2000);
+      } else {
+        setProductsData([]);
+        message.error("เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า");
+      }
     } finally {
       setLoadingTable(false);
     }
@@ -122,7 +157,16 @@ const ProductLocation = () => {
 
   const fetchOtherLocations = async (productId) => {
     try {
-      const response = await axios.get("http://172.18.43.37:3000/api/cell/cellsAll");
+      const token = localStorage.getItem("authToken");
+      if (!token) throw new Error("กรุณาเข้าสู่ระบบ");
+
+      const response = await axios.get(
+        "http://172.18.43.37:3000/api/cell/cellsAll",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       console.log("API Response for other locations:", response.data);
 
       if (!response.data.success) throw new Error("Invalid API response");
@@ -130,7 +174,10 @@ const ProductLocation = () => {
       const otherLocationsData = [];
       response.data.data.forEach((cell) => {
         const addProductLocation = (product, location) => {
-          if (product.product.productId === productId && location !== selectedCell) {
+          if (
+            product.product.productId === productId &&
+            location !== selectedCell
+          ) {
             const imageUrl =
               product.product.image && typeof product.product.image === "string"
                 ? `${BASE_URL}${product.product.image}`
@@ -152,13 +199,21 @@ const ProductLocation = () => {
           });
         }
 
-        if (cell.subCellsA && cell.subCellsA.products && cell.subCellsA.products.length > 0) {
+        if (
+          cell.subCellsA &&
+          cell.subCellsA.products &&
+          cell.subCellsA.products.length > 0
+        ) {
           cell.subCellsA.products.forEach((product) => {
             addProductLocation(product, `${cell.cellId}-A`);
           });
         }
 
-        if (cell.subCellsB && cell.subCellsB.products && cell.subCellsB.products.length > 0) {
+        if (
+          cell.subCellsB &&
+          cell.subCellsB.products &&
+          cell.subCellsB.products.length > 0
+        ) {
           cell.subCellsB.products.forEach((product) => {
             addProductLocation(product, `${cell.cellId}-B`);
           });
@@ -170,9 +225,15 @@ const ProductLocation = () => {
       setIsSearchModalOpen(true);
     } catch (error) {
       console.error("Error fetching other locations:", error.message);
-      setOtherLocations([]);
-      setIsSearchModalOpen(true);
-      message.error("เกิดข้อผิดพลาดในการดึงตำแหน่งอื่น");
+      if (error.response?.status === 401) {
+        message.error("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+        localStorage.removeItem("authToken");
+        setTimeout(() => navigate("/login"), 2000);
+      } else {
+        setOtherLocations([]);
+        setIsSearchModalOpen(true);
+        message.error("เกิดข้อผิดพลาดในการดึงตำแหน่งอื่น");
+      }
     }
   };
 
@@ -191,13 +252,18 @@ const ProductLocation = () => {
       const token = localStorage.getItem("authToken");
       if (!token) throw new Error("กรุณาเข้าสู่ระบบ");
 
-      const response = await axios.get("http://172.18.43.37:3000/api/bill/allBills/", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        "http://172.18.43.37:3000/api/bill/allBills/",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (!response.data.success) throw new Error("Invalid API response");
 
-      const billData = response.data.data.find((bill) => bill.billNumber === billNumber);
+      const billData = response.data.data.find(
+        (bill) => bill.billNumber === billNumber
+      );
       if (!billData) {
         setError("ไม่พบเลขที่บิลนี้ในระบบ");
         setLoading(false);
@@ -207,18 +273,23 @@ const ProductLocation = () => {
       setError("");
       setIsModalOpen(false);
       setLoading(false);
-      message.success("สำเร็จ! กำลังเปลี่ยนหน้า...");
+      message.success("สำเร็จ! กำลังเปิดแท็บใหม่...");
+
+      localStorage.setItem("billData", JSON.stringify(billData));
+      window.open("/Addproduct", "_blank");
+
       setTimeout(() => {
-        navigate("/Addproduct", { state: { billData } });
         setBillNumber("");
       }, 1500);
     } catch (error) {
       setLoading(false);
-      setError(
-        error.response?.status === 401
-          ? "กรุณาเข้าสู่ระบบใหม่"
-          : error.message || "เกิดข้อผิดพลาดในการตรวจสอบเลขที่บิล"
-      );
+      if (error.response?.status === 401) {
+        setError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+        localStorage.removeItem("authToken");
+        setTimeout(() => navigate("/login"), 2000);
+      } else {
+        setError(error.message || "เกิดข้อผิดพลาดในการตรวจสอบเลขที่บิล");
+      }
       console.error("Error validating bill number:", error.message);
     }
   };
@@ -229,40 +300,80 @@ const ProductLocation = () => {
     setIsModalOpen(false);
   };
 
-  const handleSearchClick = (product) => {
+  const handleSearchClick = (product, event) => {
+    event.stopPropagation();
     setSelectedProduct(product);
     fetchOtherLocations(product.id);
   };
 
   const handleSearchModalClose = () => {
     setIsSearchModalOpen(false);
-    setSelectedProduct(null);
-    setOtherLocations([]);
   };
 
-  const getBackgroundColor = (status, isSelected) => {
+  const getBackgroundColor = (status, isSelected, cellId = null) => {
     if (isSelected) return "bg-blue-500";
+    const isSubCell =
+      cellId && (cellId.includes("-A") || cellId.includes("-B"));
+    if (isSubCell) {
+      switch (status) {
+        case 0:
+          return "bg-white";
+        case 1:
+          return "bg-[#0A8F08]";
+        case 2:
+          return "bg-red-500";
+        case 3:
+          return "bg-gray-500";
+        default:
+          return "bg-white";
+      }
+    }
     switch (status) {
-      case 0: return "bg-white";
-      case 1: return "bg-green-500";
-      case 2: return "bg-red-500";
-      case 3: return "bg-gray-500";
-      default: return "bg-white";
+      case 0:
+        return "bg-white";
+      case 1:
+        return "bg-green-500";
+      case 2:
+        return "bg-red-500";
+      case 3:
+        return "bg-gray-500";
+      default:
+        return "bg-white";
     }
   };
 
-  const getTextColor = (status, isSelected) => {
+  const getTextColor = (status, isSelected, cellId = null) => {
     if (isSelected) return "text-white";
+    const isSubCell =
+      cellId && (cellId.includes("-A") || cellId.includes("-B"));
+    if (isSubCell) {
+      switch (status) {
+        case 0:
+          return "text-black";
+        case 1:
+          return "text-white";
+        case 2:
+          return "text-white";
+        case 3:
+          return "text-white";
+        default:
+          return "text-black";
+      }
+    }
     switch (status) {
-      case 0: return "text-black";
-      case 1: return "text-white";
-      case 2: return "text-white";
-      case 3: return "text-white";
-      default: return "text-black";
+      case 0:
+        return "text-black";
+      case 1:
+        return "text-white";
+      case 2:
+        return "text-white";
+      case 3:
+        return "text-white";
+      default:
+        return "text-black";
     }
   };
 
-  // ฟังก์ชันจัดการเมื่อรูปภาพโหลดไม่สำเร็จ
   const handleImageError = (e) => {
     e.target.src = DEFAULT_IMAGE_URL;
   };
@@ -282,7 +393,13 @@ const ProductLocation = () => {
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
           <Spin spinning={loading} tip="กำลังตรวจสอบ...">
-            <div className="bg-white p-8 rounded-lg shadow-xl w-[450px]">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault(); // ป้องกันการ refresh หน้า
+                handleSubmit();
+              }}
+              className="bg-white p-8 rounded-lg shadow-xl w-[450px]"
+            >
               <h2 className="text-xl font-bold mb-6 text-gray-800">
                 กรุณาใส่เลขที่บิลสินค้า
               </h2>
@@ -302,6 +419,7 @@ const ProductLocation = () => {
               {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
               <div className="flex justify-end gap-4">
                 <button
+                  type="button" // ป้องกันการ submit จากปุ่มนี้
                   onClick={handleCancel}
                   className="px-5 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-700 font-medium transition-all"
                   disabled={loading}
@@ -309,6 +427,7 @@ const ProductLocation = () => {
                   ยกเลิก
                 </button>
                 <button
+                  type="submit" // ปุ่มนี้จะ trigger form submit
                   onClick={handleSubmit}
                   className="px-5 py-2 bg-[#006ec4] text-white rounded-lg hover:bg-[#006ec4] hover:brightness-110 font-medium transition-all"
                   disabled={loading}
@@ -316,7 +435,7 @@ const ProductLocation = () => {
                   ตกลง
                 </button>
               </div>
-            </div>
+            </form>
           </Spin>
         </div>
       )}
@@ -324,7 +443,10 @@ const ProductLocation = () => {
       <div className="flex overflow-x-auto">
         <div className="flex flex-col justify-between mr-4 pt-1 shrink-0">
           {[...rows].reverse().map((row) => (
-            <div key={row} className="h-16 flex items-center text-gray-600 text-sm">
+            <div
+              key={row}
+              className="h-16 flex items-center text-gray-600 text-sm"
+            >
               {row}
             </div>
           ))}
@@ -342,7 +464,8 @@ const ProductLocation = () => {
               columns.map((col) => {
                 const cellId = `${col}-${row}`;
                 const cell = newCells[col]?.find((c) => c.row === row);
-                const status = cellStatus[cellId] !== undefined ? cellStatus[cellId] : 0;
+                const status =
+                  cellStatus[cellId] !== undefined ? cellStatus[cellId] : 0;
                 const hasSubCells = cell?.subCells?.length > 0;
                 const isSelected = selectedCell === cellId;
 
@@ -362,7 +485,11 @@ const ProductLocation = () => {
                     className={`h-16 relative ${
                       hasSubCells
                         ? "flex space-x-1 bg-transparent"
-                        : `${getBackgroundColor(status, isSelected)} border border-gray-200 rounded-sm hover:bg-opacity-75 cursor-pointer`
+                        : `${getBackgroundColor(
+                            status,
+                            isSelected,
+                            cellId
+                          )} border border-gray-200 rounded-sm hover:bg-opacity-75 cursor-pointer`
                     }`}
                     onClick={() => {
                       console.log("Clicked Cell:", cellId);
@@ -374,17 +501,21 @@ const ProductLocation = () => {
                     {hasSubCells ? (
                       cell.subCells.map((subCell) => {
                         const subCellStatus =
-                          cellStatus[subCell.id] !== undefined ? cellStatus[subCell.id] : 0;
+                          cellStatus[subCell.id] !== undefined
+                            ? cellStatus[subCell.id]
+                            : 0;
                         const isSubCellSelected = selectedCell === subCell.id;
                         return (
                           <div
                             key={subCell.id}
                             className={`h-16 flex-1 ${getBackgroundColor(
                               subCellStatus,
-                              isSubCellSelected
+                              isSubCellSelected,
+                              subCell.id
                             )} ${getTextColor(
                               subCellStatus,
-                              isSubCellSelected
+                              isSubCellSelected,
+                              subCell.id
                             )} border border-gray-200 rounded-sm flex items-center justify-center hover:bg-opacity-75 cursor-pointer`}
                             style={{ width: `${baseColumnWidth / 2}rem` }}
                             onClick={(e) => {
@@ -403,7 +534,8 @@ const ProductLocation = () => {
                       <div
                         className={`flex items-center justify-center h-full w-full ${getTextColor(
                           status,
-                          isSelected
+                          isSelected,
+                          cellId
                         )}`}
                       >
                         {col}-{row}
@@ -434,7 +566,7 @@ const ProductLocation = () => {
           <span className="text-sm">(ว่าง)</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-green-500 border border-gray-200 rounded-full mr-2"></div>
+          <div className="w-4 h-4 bg-[#0A8F08] border border-gray-200 rounded-full mr-2"></div>
           <span className="text-sm">(ใช้งาน)</span>
         </div>
         <div className="flex items-center">
@@ -468,7 +600,7 @@ const ProductLocation = () => {
             <p className="w-[80px] text-center font-semibold">Quantity</p>
             <p className="w-[100px] text-center font-semibold">In</p>
             <p className="w-[100px] text-center font-semibold">End</p>
-            <p className="w-[80px] text-center font-semibold">Action</p>
+            <p className="w-[80px] text-center font-semibold"></p>
           </div>
         </div>
 
@@ -500,8 +632,8 @@ const ProductLocation = () => {
                 <div className="w-[100px] text-center">{item.in}</div>
                 <div className="w-[100px] text-center">{item.end}</div>
                 <div
-                  className="w-[80px] text-center cursor-pointer hover:text-blue-500"
-                  onClick={() => handleSearchClick(item)}
+                  className="w-[80px] text-center cursor-pointer hover:text-blue-500 search-icon"
+                  onClick={(e) => handleSearchClick(item, e)}
                 >
                   <SearchOutlined className="text-xl" />
                 </div>
@@ -517,7 +649,7 @@ const ProductLocation = () => {
 
       {isSearchModalOpen && selectedProduct && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-[450px] max-h-[400px] overflow-y-auto">
+          <div className="modal bg-white p-6 rounded-lg shadow-xl w-[450px] max-h-[400px] overflow-y-auto">
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-4">
                 <img
@@ -527,8 +659,12 @@ const ProductLocation = () => {
                   onError={handleImageError}
                 />
                 <div className="flex-1">
-                  <p className="text-lg font-semibold">Name: {selectedProduct.name}</p>
-                  <p className="text-sm text-gray-600">Type: {selectedProduct.type}</p>
+                  <p className="text-lg font-semibold">
+                    Name: {selectedProduct.name}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Type: {selectedProduct.type}
+                  </p>
                 </div>
               </div>
               <div className="border-t pt-4">
@@ -537,11 +673,15 @@ const ProductLocation = () => {
                   otherLocations.map((loc, index) => (
                     <div key={index} className="flex justify-between mb-2">
                       <span>{loc.location}</span>
-                      <span className="text-green-600">จำนวน {loc.quantity} ชิ้น</span>
+                      <span className="text-green-600">
+                        จำนวน {loc.quantity} ชิ้น
+                      </span>
                     </div>
                   ))
                 ) : (
-                  <p className="text-center text-gray-500">ไม่มีสินค้าในตำแหน่งอื่น</p>
+                  <p className="text-center text-gray-500">
+                    ไม่มีสินค้าในตำแหน่งอื่น
+                  </p>
                 )}
               </div>
               <div className="flex justify-end mt-4">

@@ -1,155 +1,77 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet, Font, PDFDownloadLink } from "@react-pdf/renderer";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Button } from "antd";
 
-// ลงทะเบียนฟอนต์ภาษาไทย
-Font.register({
-  family: "THSarabunNew",
-  fonts: [
-    { src: "/public/THSarabunNew/THSarabunNew.ttf" },
-    { src: "/public/THSarabunNew/THSarabunNew Bold.ttf", fontWeight: "bold" },
-    { src: "/public/THSarabunNew/THSarabunNew BoldItalic.ttf", fontWeight: "bold", fontStyle: "italic" },
-    { src: "/public/THSarabunNew/THSarabunNew Italic.ttf", fontStyle: "italic" },
-  ],
-});
+function Exportpage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const selectedItems = location.state?.selectedItems || [];
+  const billnumber = location.state?.billnumber || "N/A";
+  const BASE_URL = "http://172.18.43.37:3000"; // ปรับตาม URL ของ backend คุณ
 
-const styles = StyleSheet.create({
-  page: {
-    paddingLeft: 48, // 4rem ≈ 48pt
-    paddingRight: 48,
-    paddingTop: 24,
-    paddingBottom: 24,
-    fontFamily: "THSarabunNew",
-    backgroundColor: "#fff",
-  },
-  header: {
-    textAlign: "center",
-    marginBottom: 10, // mb-5 ≈ 20pt
-  },
-  title: {
-    fontSize: 70, // ปรับจาก 54pt เป็น 70pt
-    fontWeight: "bold",
-    lineHeight: 1.2,
-  },
-  subtitle: {
-    fontSize: 18, // ปรับจาก 13.5pt เป็น 18pt
-    marginTop: 4,
-    lineHeight: 1.2,
-  },
-  infoSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 24, // mb-6 ≈ 24pt
-    fontSize: 14, // ปรับจาก 10.5pt เป็น 14pt
-    lineHeight: 1.4,
-  },
-  line: {
-    width: "100%",
-    height: 0.75,
-    backgroundColor: "#DCDCDC",
-    marginVertical: 12, // ปรับจาก 24 เป็น 12
-  },
-  tableHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    fontSize: 14, // ปรับจาก 10.5pt เป็น 14pt
-    fontWeight: "bold",
-    marginBottom: 8, // mb-2 ≈ 8pt
-    lineHeight: 1.4,
-  },
-  tableRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    fontSize: 14, // 
-    marginBottom: 8, // 
-    lineHeight: 1.4,
-  },
-  tableColumn1: {
-    width: 64, 
-    textAlign: "center",
-  },
-  tableColumn2: {
-    flex: 1,
-    textAlign: "center",
-  },
-  tableColumn3: {
-    width: 64, 
-    textAlign: "right",
-  },
-  tableLine: {
-    width: "100%",
-    height: 0.75, 
-    backgroundColor: "#000000", 
-    marginVertical: 8, 
-  },
-  footer: {
-    marginTop: 80, 
-    textAlign: "right",
-    fontSize: 14, 
-    lineHeight: 1.4,
-  },
-  footerText: {
-    marginBottom: 12, 
-  },
-});
+  const handleGeneratePDF = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      alert("กรุณาล็อกอินใหม่เพื่อดำเนินการต่อ");
+      return;
+    }
 
-const MyDocument = ({ data }) => (
-  <Document>
-    <Page size="A4" style={styles.page}>
-      <View style={styles.header}>
-        <Text style={styles.title}>J.I.B</Text>
-        <Text style={styles.subtitle}>ใบเบิกสินค้า</Text>
-      </View>
-      <View style={styles.infoSection}>
-        <View>
-          <Text>สาขา: สาขาใหญ่</Text>
-          <Text>หัวข้อ: เบิกทรัพย์สิน</Text>
-        </View>
-        <View style={{ textAlign: "right" }}>
-          <Text>เลขที่ใบเบิก: ASDF1234567</Text>
-          <Text>วันที่: 12/3/2025</Text>
-        </View>
-      </View>
-      <View style={styles.line} />
-      <View style={styles.tableHeader}>
-        <Text style={styles.tableColumn1}>ลำดับ</Text>
-        <Text style={styles.tableColumn2}>รายการ</Text>
-        <Text style={styles.tableColumn3}>จำนวน</Text>
-      </View>
-      <View style={styles.tableLine} />
-      {data.map((row, index) => (
-        <View key={index} style={styles.tableRow}>
-          <Text style={styles.tableColumn1}>{index + 1}</Text>
-          <Text style={styles.tableColumn2}>{row.item}</Text>
-          <Text style={styles.tableColumn3}>{row.quantity}</Text>
-        </View>
-      ))}
-      <View style={styles.tableLine} />
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>ชื่อ .......................................................</Text>
-        <Text>วันที่ .............../................./.................</Text>
-      </View>
-    </Page>
-  </Document>
-);
+    const payload = {
+      selectedItems,
+      billnumber,
+    };
 
-function ExportPage() {
-  const data = [
-    { item: "Asus Vivobook", quantity: 5 },
-    { item: "Asus Vivobook", quantity: 10 },
-    { item: "Dell XPS", quantity: 3 },
-    { item: "MacBook Pro", quantity: 2 },
-  ];
+    try {
+      const response = await fetch(`${BASE_URL}/api/generate-pdf`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate PDF");
+      }
+
+      // รับไฟล์ PDF เป็น blob
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      // เปิด PDF ในแท็บใหม่
+      window.open(url, "_blank");
+
+      // ปล่อย URL หลังจากใช้งานเสร็จ
+      // window.URL.revokeObjectURL(url); // ถ้าต้องการให้ URL ใช้งานได้ต่อ ให้คอมเมนต์บรรทัดนี้
+
+      alert("สร้าง PDF สำเร็จ!");
+    } catch (error) {
+      console.error("Error generating PDF:", error.message);
+      alert(`เกิดข้อผิดพลาด: ${error.message}`);
+    }
+  };
+
+  const handleBack = () => {
+    navigate("/Requisition"); // กลับไปหน้า Requisition
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-5">
       <div className="mb-5 flex gap-3 items-center justify-end m-3">
-        <PDFDownloadLink
-          document={<MyDocument data={data} />}
-          fileName="ใบเบิกสินค้า.pdf"
+        <Button
+          onClick={handleGeneratePDF}
+          type="primary"
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
-          {({ loading }) => (loading ? "กำลังสร้าง PDF..." : "Export PDF")}
-        </PDFDownloadLink>
+          Export PDF
+        </Button>
+        <Button
+          onClick={handleBack}
+          style={{ width: 100, borderColor: "#000", color: "#000" }}
+        >
+          กลับ
+        </Button>
       </div>
       <div
         className="mx-auto bg-white shadow-lg p-6"
@@ -170,8 +92,8 @@ function ExportPage() {
             <p>หัวข้อ: เบิกทรัพย์สิน</p>
           </div>
           <div className="text-right">
-            <p>เลขที่ใบเบิก: ASDF1234567</p>
-            <p>วันที่: 12/3/2025</p>
+            <p>เลขที่ใบเบิก: {billnumber}</p>
+            <p>วันที่: {new Date().toLocaleDateString("th-TH")}</p>
           </div>
         </div>
         <div className="w-full h-[1px] bg-gray-300 my-6" />
@@ -181,11 +103,11 @@ function ExportPage() {
           <p className="w-16 text-right">จำนวน</p>
         </div>
         <div className="w-full h-[1px] bg-black my-4" />
-        {data.map((row, index) => (
+        {selectedItems.map((row, index) => (
           <div key={index} className="flex justify-between mb-2 text-sm">
             <p className="w-16 text-center">{index + 1}</p>
-            <p className="flex-1 text-center">{row.item}</p>
-            <p className="w-16 text-right">{row.quantity}</p>
+            <p className="flex-1 text-center">{row.name}</p>
+            <p className="w-16 text-right">{row.requestedQuantity}</p>
           </div>
         ))}
         <div className="w-full h-[1px] bg-black my-6" />
@@ -198,4 +120,4 @@ function ExportPage() {
   );
 }
 
-export default ExportPage;
+export default Exportpage;

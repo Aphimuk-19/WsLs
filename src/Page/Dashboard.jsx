@@ -6,7 +6,6 @@ import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 
 const { Content } = Layout;
 
-// ข้อมูลตัวอย่างสำหรับตาราง
 const data = [
   {
     key: "1",
@@ -49,7 +48,7 @@ const Dashboard = () => {
   return (
     <Content className="mt-10">
       <div className="flex justify-center items-center mt-[16px] gap-6">
-        <div className="w-[478px] h-[344px] bg-white rounded-xl p-5">
+        <div className="w-[478px] h-[344px] bg-white rounded-xl p-5 flex flex-col">
           <h1 className="opacity-70 text-[#030229] text-lg font-bold">
             สินค้าเข้าแล้วออก
           </h1>
@@ -98,13 +97,11 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Orders Section */}
-        <div className="w-[875px] h-[340px] bg-white rounded-xl overflow-hidden">
+        <div className="w-[875px] h-[344px] bg-white rounded-xl overflow-hidden flex flex-col">
           <h1 className="opacity-70 text-[#030229] text-lg font-bold pt-5 pl-5">
             5 Recent Orders
           </h1>
-          <div className="px-4 w-full">
-            {/* Header ของตาราง (ไม่มีเส้นขอบ) */}
+          <div className="px-4 w-full flex-1 flex flex-col">
             <div className="flex space-x-6 p-4">
               <p className="flex-[2] text-center font-semibold text-[#030229]">
                 Tracking No
@@ -123,14 +120,14 @@ const Dashboard = () => {
               style={{
                 width: "830px",
                 height: "1px",
-                backgroundColor: "#dcdcdc", // light gray line color
+                backgroundColor: "#dcdcdc",
               }}
             ></div>
-            <div className="max-h-[240px] overflow-y-auto">
+            <div className="flex-1 overflow-y-auto">
               {data.map((item) => (
                 <div
                   key={item.key}
-                  className="flex space-x-6  p-3 hover:bg-gray-50"
+                  className="flex space-x-6 p-3 hover:bg-gray-50"
                 >
                   <div className="flex-[2] flex items-center justify-center text-center">
                     {item.Trackingno}
@@ -158,32 +155,32 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Additional Content Section */}
-      <div className="flex justify-center items-center gap-6 mt-[16px] ">
-        <div className="flex justify-center items-center gap-6 mt-[16px]">
-          <div className="w-[875px] bg-white rounded-[10px] flex flex-col justify-center items-center p-4">
+      <div className="flex justify-center items-center gap-6 mt-[16px]">
+        <div className="w-[875px] h-[344px] bg-white rounded-[10px] flex flex-col p-4">
+          <div className="flex-1">
             <DashboardLocationView />
-            <div className="flex items-center justify-start mt-2 space-x-10 ml-[20px] mr-auto">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-white border border-gray-200 rounded-full mr-2"></div>
-                <span className="text-sm">(ว่าง)</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 border border-gray-200 rounded-full mr-2"></div>
-                <span className="text-sm">(ใช้งาน)</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-red-500 border border-gray-200 rounded-full mr-2"></div>
-                <span className="text-sm">(เต็ม)</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-gray-500 border border-gray-200 rounded-full mr-2"></div>
-                <span className="text-sm">(ปิดการใช้งาน)</span>
-              </div>
+          </div>
+          <div className="flex items-center justify-start mt-2 space-x-10 ml-[20px]">
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-white border border-gray-200 rounded-full mr-2"></div>
+              <span className="text-sm">(ว่าง)</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-[#0A8F08] border border-gray-200 rounded-full mr-2"></div>
+              <span className="text-sm">(ใช้งาน)</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-red-500 border border-gray-200 rounded-full mr-2"></div>
+              <span className="text-sm">(เต็ม)</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-gray-500 border border-gray-200 rounded-full mr-2"></div>
+              <span className="text-sm">(ปิดการใช้งาน)</span>
             </div>
           </div>
         </div>
-        <div className="w-[478px] h-[343px] bg-white rounded-[10px]">
+
+        <div className="w-[478px] h-[344px] bg-white rounded-[10px] flex flex-col">
           <h1 className="opacity-70 text-[#030229] text-lg font-bold p-5">
             พื้นที่เก็บสินค้า
           </h1>

@@ -115,13 +115,27 @@ const Managelocation = () => {
     }
   };
 
-  const getCellColor = (status) => {
-    switch (status) {
-      case 0: return "bg-white text-black";
-      case 1: return "bg-green-500 text-white";
-      case 2: return "bg-red-500 text-white";
-      case 3: return "bg-gray-500 text-white";
-      default: return "bg-white text-black";
+  const getCellColor = (status, cellId) => {
+    // ตรวจสอบว่าเป็น subcell หรือไม่
+    const isSubCell = cellId && (cellId.includes("-A") || cellId.includes("-B"));
+    
+    if (isSubCell) {
+      switch (status) {
+        case 0: return "bg-white text-black"; // ว่าง
+        case 1: return "bg-[#0A8F08] text-white"; // ใช้งาน (เปลี่ยนจาก green-500)
+        case 2: return "bg-red-500 text-white"; // เต็ม
+        case 3: return "bg-gray-500 text-white"; // ปิดใช้งาน
+        default: return "bg-white text-black";
+      }
+    } else {
+      // cell ปกติยังใช้สีเดิม
+      switch (status) {
+        case 0: return "bg-white text-black";
+        case 1: return "bg-green-500 text-white";
+        case 2: return "bg-red-500 text-white";
+        case 3: return "bg-gray-500 text-white";
+        default: return "bg-white text-black";
+      }
     }
   };
 
@@ -210,7 +224,7 @@ const Managelocation = () => {
                           className={`h-16 relative ${
                             hasSubCells
                               ? "flex space-x-1 bg-transparent"
-                              : `${getCellColor(status)} border border-gray-200 rounded-sm hover:bg-gray-100`
+                              : `${getCellColor(status, cellId)} border border-gray-200 rounded-sm hover:bg-gray-100`
                           }`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -224,7 +238,7 @@ const Managelocation = () => {
                               return (
                                 <div
                                   key={subCell.id}
-                                  className={`h-16 flex-1 ${getCellColor(subCellStatus)} border border-gray-200 rounded-sm flex items-center justify-center relative`}
+                                  className={`h-16 flex-1 ${getCellColor(subCellStatus, subCell.id)} border border-gray-200 rounded-sm flex items-center justify-center relative`}
                                   style={{ width: `${baseColumnWidth / 2}rem` }}
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -402,7 +416,7 @@ const Managelocation = () => {
               <span className="text-sm">(ว่าง)</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 bg-green-500 border border-gray-200 rounded-full mr-2"></div>
+              <div className="w-4 h-4 bg-[#195318] border border-gray-200 rounded-full mr-2"></div> {/* เปลี่ยนสีในคำอธิบาย */}
               <span className="text-sm">(ใช้งาน)</span>
             </div>
             <div className="flex items-center">
@@ -415,7 +429,7 @@ const Managelocation = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div>  
     </div>
   );
 };

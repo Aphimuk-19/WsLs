@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Dropdown, Space, Badge, Menu } from "antd";
 import {
   DownOutlined,
-  BellOutlined,
+  SwapOutlined,
   PieChartOutlined,
   AppstoreOutlined,
   FileTextOutlined,
@@ -35,7 +35,7 @@ const Sidebar = () => {
   const location = useLocation();
 
   const fetchUserProfile = async () => {
-    const token = localStorage.getItem("authToken"); // แก้จาก "token" เป็น "authToken"
+    const token = localStorage.getItem("authToken");
     if (!token) {
       console.log("No token found, redirecting to login");
       navigate("/Login");
@@ -67,7 +67,7 @@ const Sidebar = () => {
     } catch (error) {
       console.error("Error fetching user profile:", error);
       if (error.response?.status === 401) {
-        localStorage.removeItem("authToken"); // แก้จาก "token" เป็น "authToken"
+        localStorage.removeItem("authToken");
         navigate("/Login");
       }
     }
@@ -78,7 +78,8 @@ const Sidebar = () => {
       "/Dashboard": "Dashboard",
       "/Requisition": "Requisition",
       "/ProductLocation": "ProductLocation",
-      "/Managelocation": "Managelocation",
+      "/ManageLocation": "ManageLocation",
+      "/ProductTransfer": "ProductTransfer",
       "/ManageUsers": "ManageUsers",
       "/Account": "Account",
     };
@@ -104,11 +105,12 @@ const Sidebar = () => {
   const handleMenuClick = ({ key }) => {
     const menuMap = {
       1: "Dashboard",
-      2: "Requisition",
       3: "ProductLocation",
-      4: "Managelocation",
-      5: "ManageUsers",
-      6: "Account",
+      4: "ManageLocation",
+      5: "ProductTransfer",
+      2: "Requisition",
+      6: "ManageUsers",
+      7: "Account",
     };
     const selectedPage = menuMap[key] || "Dashboard";
     setHeaderText(selectedPage);
@@ -116,20 +118,23 @@ const Sidebar = () => {
     navigate(`/${selectedPage}`);
   };
 
+  // Modified handleLogoClick to maintain current page
   const handleLogoClick = () => {
-    setHeaderText("Dashboard");
-    setCurrentPage("Dashboard");
-    navigate("/Dashboard");
+    // Remove the navigation to Dashboard and keep current page state
+    // Only toggle the collapse state if needed, but in this case, we'll do nothing special
+    // Since we want to keep the current page, we don't need to change headerText or currentPage
+    console.log("Logo clicked, maintaining current page:", currentPage);
   };
 
   const getSelectedKey = () => {
     const pageToKeyMap = {
       "Dashboard": "1",
-      "Requisition": "2",
       "ProductLocation": "3",
-      "Managelocation": "4",
-      "ManageUsers": "5",
-      "Account": "6",
+      "ManageLocation": "4",
+      "ProductTransfer": "5",
+      "Requisition": "2",
+      "ManageUsers": "6",
+      "Account": "7",
     };
     const selectedKey = pageToKeyMap[currentPage];
     console.log("Current Page:", currentPage, "Selected Key:", selectedKey);
@@ -143,16 +148,17 @@ const Sidebar = () => {
       disabled: true,
     },
     { key: "1", label: "Dashboard", icon: <PieChartOutlined /> },
-    { key: "2", label: "Requisition", icon: <FileTextOutlined /> },
     { key: "3", label: "Product Location", icon: <AppstoreOutlined /> },
     { key: "4", label: "Manage Location", icon: <DatabaseOutlined /> },
-    ...(userRole === "admin" ? [{ key: "5", label: "Manage User", icon: <TeamOutlined /> }] : []),
+    { key: "5", label: "Product Transfer", icon: <SwapOutlined /> },
+    { key: "2", label: "Requisition", icon: <FileTextOutlined /> },
+    ...(userRole === "admin" ? [{ key: "6", label: "Manage User", icon: <TeamOutlined /> }] : []),
     !collapsed && {
       key: "Other",
       label: <div style={{ padding: "0 16px", fontWeight: "bold", fontSize: "12px" }}>OTHER</div>,
       disabled: true,
     },
-    { key: "6", label: "Accounts", icon: <UserOutlined /> },
+    { key: "7", label: "Accounts", icon: <UserOutlined /> },
   ].filter(Boolean);
 
   const item = [
@@ -203,7 +209,7 @@ const Sidebar = () => {
       label: "Logout",
       icon: <LogoutOutlined />,
       onClick: () => {
-        localStorage.removeItem("authToken"); // แก้จาก "token" เป็น "authToken"
+        localStorage.removeItem("authToken");
         localStorage.removeItem("role");
         localStorage.removeItem("firstName");
         localStorage.removeItem("lastName");
