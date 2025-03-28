@@ -234,8 +234,8 @@ const RequisitionTab = () => {
     }
 
     try {
-      console.log("Sending payload to /withdraw-product:", JSON.stringify(payload));
-      const response = await fetch(`${BASE_URL}/api/manage/withdraw-product`, {
+      console.log("Sending payload to /api/withdraw/withdraw:", JSON.stringify(payload));
+      const response = await fetch("http://172.18.43.37:3000/api/withdraw/withdraw", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -247,16 +247,15 @@ const RequisitionTab = () => {
       const result = await response.json();
       if (response.ok) {
         console.log("Withdraw successful:", result);
-        const itemsToExport = [...selectedItems];
-        // ดึง billNumber จาก result.data.bill.billNumber
-        const billnumber = result.data?.bill?.billNumber || "N/A";
+        const pdfUrl = `http://172.18.43.37:3000${result.data.pdfUrl}`;
         setSelectedItems([]);
         setQuantities(requisitionData.map(() => 0));
         alert("เบิกสินค้าสำเร็จ!");
-        navigate("/Exportpage", { state: { selectedItems: itemsToExport, billnumber } });
+        window.open(pdfUrl, "_blank"); // เปิด PDF ในแท็บใหม่
+        window.location.reload(); // รีเฟรชหน้า
       } else {
         console.error("Withdraw failed:", result);
-        alert(`เกิดข้อผิดพลาด: ${result.error || "ไม่สามารถดำเนินการได้"}`);
+        alert(`เกิดข้อผิดพลาด: ${result.message || "ไม่สามารถดำเนินการได้"}`);
       }
     } catch (error) {
       console.error("Error during withdraw:", error.message);
