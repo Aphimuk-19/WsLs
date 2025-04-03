@@ -1,50 +1,172 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Layout } from "antd";
 import DashboardLocationView from "../Context/DashboardLocationView";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
+import { Doughnut } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 const { Content } = Layout;
 
-const data = [
-  {
-    key: "1",
-    Trackingno: "001",
-    ProductName: "ASUS VIVOBOOK",
-    Status: "เข้า",
-    Amount: "10",
+const chartOptions = {
+  plugins: {
+    legend: {
+      position: "bottom",
+      align: "center",
+      labels: {
+        font: {
+          size: 11,
+        },
+        pointStyle: "circle",
+        boxWidth: 10,
+        padding: 10,
+        usePointStyle: true,
+        filter: (legendItem, chartData) => {
+          return chartData.datasets[0].backgroundColor[legendItem.index] !== "#FFFFFF";
+        },
+      },
+    },
   },
-  {
-    key: "2",
-    Trackingno: "002",
-    ProductName: "DELL XPS 13",
-    Status: "ออก",
-    Amount: "5",
-  },
-  {
-    key: "3",
-    Trackingno: "003",
-    ProductName: "HP SPECTRE",
-    Status: "เข้า",
-    Amount: "15",
-  },
-  {
-    key: "4",
-    Trackingno: "004",
-    ProductName: "LENOVO THINKPAD",
-    Status: "ออก",
-    Amount: "8",
-  },
-  {
-    key: "5",
-    Trackingno: "005",
-    ProductName: "MACBOOK PRO",
-    Status: "เข้า",
-    Amount: "12",
-  },
-];
+  cutout: "70%",
+  maintainAspectRatio: false,
+};
 
 const Dashboard = () => {
+  const [latestItems, setLatestItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dailyItems, setDailyItems] = useState({ inCount: 0, outCount: 0 });
+  const [chartData, setChartData] = useState({
+    labels: ["ว่าง", "ใช้งาน", "เต็ม", "ปิดการใช้งาน"],
+    datasets: [
+      {
+        data: [0, 0, 0, 0],
+        backgroundColor: ["#FFFFFF", "#0A8F08", "#FF0000", "#6B7280"],
+        borderWidth: 1,
+        borderColor: "#E5E7EB",
+      },
+    ],
+  });
+
+  useEffect(() => {
+    const fetchLatestItems = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
+        }
+
+        const response = await fetch("http://172.18.43.37:3000/api/dashboard/latest-items", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          const formattedData = result.data.map((item, index) => ({
+            key: String(index + 1),
+            Trackingno: item.trackingNo,
+            ProductName: item.productName,
+            Status: item.status === "in" ? "เข้า" : "ออก",
+            Amount: String(item.amount),
+          }));
+          setLatestItems(formattedData);
+        }
+      } catch (error) {
+        console.error("Error fetching latest items:", error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchChartData = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
+        }
+
+        const response = await fetch("http://172.18.43.37:3000/api/cell/summary", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          const { data } = result;
+          setChartData({
+            labels: ["ว่าง", "ใช้งานได้", "เต็ม", "ปิดการใช้งาน"],
+            datasets: [
+              {
+                data: [
+                  data.emptyBoxes,
+                  data.activeBoxes,
+                  data.inactiveBoxes,
+                  data.disabledBoxes,
+                ],
+                backgroundColor: ["#FFFFFF", "#0A8F08", "#FF0000", "#6B7280"],
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+              },
+            ],
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching chart data:", error.message);
+      }
+    };
+
+    const fetchDailyItems = async () => {
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
+        }
+
+        const response = await fetch("http://172.18.43.37:3000/api/dashboard/daily-items", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          setDailyItems({
+            inCount: result.data.inCount || 0,
+            outCount: result.data.outCount || 0
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching daily items:", error.message);
+      }
+    };
+
+    fetchLatestItems();
+    fetchChartData();
+    fetchDailyItems();
+  }, []);
+
   return (
     <Content className="mt-10">
       <div className="flex justify-center items-center mt-[16px] gap-6">
@@ -60,7 +182,7 @@ const Dashboard = () => {
               />
             </div>
             <div className="flex-col justify-center items-center text-center space-y-1">
-              <p className="text-4xl font-bold">250</p>
+              <p className="text-4xl font-bold">{dailyItems.inCount}</p>
               <p className="text-lg text-gray-600">จำนวนสินค้าเข้า</p>
             </div>
             <div className="mt-[-75px]">
@@ -88,7 +210,7 @@ const Dashboard = () => {
               />
             </div>
             <div className="flex-col justify-center items-center text-center space-y-1">
-              <p className="text-4xl font-bold">250</p>
+              <p className="text-4xl font-bold">{dailyItems.outCount}</p>
               <p className="text-lg text-gray-600">จำนวนสินค้าออก</p>
             </div>
             <div className="mt-[-65px]">
@@ -99,7 +221,7 @@ const Dashboard = () => {
 
         <div className="w-[875px] h-[344px] bg-white rounded-xl overflow-hidden flex flex-col">
           <h1 className="opacity-70 text-[#030229] text-lg font-bold pt-5 pl-5">
-            5 Recent Orders
+            5 รายการล่าสุด
           </h1>
           <div className="px-4 w-full flex-1 flex flex-col">
             <div className="flex space-x-6 p-4">
@@ -124,32 +246,37 @@ const Dashboard = () => {
               }}
             ></div>
             <div className="flex-1 overflow-y-auto">
-              {data.map((item) => (
-                <div
-                  key={item.key}
-                  className="flex space-x-6 p-3 hover:bg-gray-50"
-                >
-                  <div className="flex-[2] flex items-center justify-center text-center">
-                    {item.Trackingno}
+              {loading ? (
+                <p className="text-center mt-4">Loading...</p>
+              ) : (
+                latestItems.map((item) => (
+                  <div
+                    key={item.key}
+                    className="flex space-x-6 p-2.5 hover:bg-gray-50"
+                  >
+                    <div className="flex-[2] flex items-center justify-center text-center">
+                      {item.Trackingno}
+                    </div>
+                    <div className="flex-[3] flex items-center justify-center text-center">
+                      {item.ProductName}
+                    </div>
+                    <div className="flex-[3] flex items-center justify-center text-center">
+                      <span
+                        className={`flex items-center justify-center text-white text-xs font-semibold px-2 py-1 rounded-lg truncate w-[61px] h-[24px] ${
+                          item.Status === "เข้า"
+                            ? "bg-[#25c0e2]"
+                            : "bg-[#f2383a]"
+                        }`}
+                      >
+                        {item.Status}
+                      </span>
+                    </div>
+                    <div className="flex-[2] flex items-center justify-center text-center">
+                      {item.Amount}
+                    </div>
                   </div>
-                  <div className="flex-[3] flex items-center justify-center text-center">
-                    {item.ProductName}
-                  </div>
-                  <div className="flex-[3] flex items-center justify-center text-center">
-                    <span
-                      className={`flex items-center justify-center text-white text-xs font-semibold px-2 py-1 rounded-full truncate ${
-                        item.Status === "เข้า" ? "bg-green-500" : "bg-red-500"
-                      }`}
-                      style={{ width: "60px" }}
-                    >
-                      {item.Status}
-                    </span>
-                  </div>
-                  <div className="flex-[2] flex items-center justify-center text-center">
-                    {item.Amount}
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -160,22 +287,18 @@ const Dashboard = () => {
           <div className="flex-1">
             <DashboardLocationView />
           </div>
-          <div className="flex items-center justify-start mt-2 space-x-10 ml-[20px]">
+          <div className="flex items-center justify-start mt-2 space-x-6 ml-[20px]">
             <div className="flex items-center">
-              <div className="w-4 h-4 bg-white border border-gray-200 rounded-full mr-2"></div>
-              <span className="text-sm">(ว่าง)</span>
+              <div className="w-2 h-2 bg-[#0A8F08] border border-gray-200 rounded-full mr-1"></div>
+              <span className="text-xs">(ใช้งาน)</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 bg-[#0A8F08] border border-gray-200 rounded-full mr-2"></div>
-              <span className="text-sm">(ใช้งาน)</span>
+              <div className="w-2 h-2 bg-red-500 border border-gray-200 rounded-full mr-1"></div>
+              <span className="text-xs">(เต็ม)</span>
             </div>
             <div className="flex items-center">
-              <div className="w-4 h-4 bg-red-500 border border-gray-200 rounded-full mr-2"></div>
-              <span className="text-sm">(เต็ม)</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-gray-500 border border-gray-200 rounded-full mr-2"></div>
-              <span className="text-sm">(ปิดการใช้งาน)</span>
+              <div className="w-2 h-2 bg-gray-500 border border-gray-200 rounded-full mr-1"></div>
+              <span className="text-xs">(ปิดการใช้งาน)</span>
             </div>
           </div>
         </div>
@@ -184,6 +307,11 @@ const Dashboard = () => {
           <h1 className="opacity-70 text-[#030229] text-lg font-bold p-5">
             พื้นที่เก็บสินค้า
           </h1>
+          <div className="flex-1 flex items-center justify-center">
+            <div style={{ width: "270px", height: "270px" }}>
+              <Doughnut data={chartData} options={chartOptions} />
+            </div>
+          </div>
         </div>
       </div>
     </Content>

@@ -38,19 +38,17 @@ const Login = () => {
         throw new Error("ไม่ได้รับ token จาก API");
       }
 
+      // เก็บข้อมูลลง localStorage
       localStorage.setItem("authToken", token);
+      localStorage.setItem("employeeId", employeeID); // เก็บ employeeId จาก input
+      localStorage.setItem("role", (user && user.role ? user.role.toLowerCase() : "user"));
+      localStorage.setItem("firstName", (user && user.firstName ? user.firstName : ""));
+      localStorage.setItem("lastName", (user && user.lastName ? user.lastName : ""));
+      localStorage.setItem("email", (user && user.email ? user.email : ""));
+
+      // Log ข้อมูลที่เก็บ
       console.log("Stored Token:", localStorage.getItem("authToken"));
-
-      const userRole = user && user.role ? user.role.toLowerCase() : "user";
-      const firstName = user && user.firstName ? user.firstName : "";
-      const lastName = user && user.lastName ? user.lastName : "";
-      const email = user && user.email ? user.email : "";
-
-      localStorage.setItem("role", userRole);
-      localStorage.setItem("firstName", firstName);
-      localStorage.setItem("lastName", lastName);
-      localStorage.setItem("email", email);
-
+      console.log("Stored EmployeeId:", localStorage.getItem("employeeId"));
       console.log("Stored Role:", localStorage.getItem("role"));
       console.log("Stored FirstName:", localStorage.getItem("firstName"));
       console.log("Stored LastName:", localStorage.getItem("lastName"));

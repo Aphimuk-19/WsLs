@@ -40,9 +40,10 @@ const ResetPasswordForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
-    if (formData.password.length < 8) {
-      newErrors.password = ["รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร"];
-    }
+    // Remove the password length validation
+    // if (formData.password.length < 8) {
+    //   newErrors.password = ["รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร"];
+    // }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = ["รหัสผ่านไม่ตรงกัน"];
     }
@@ -84,63 +85,14 @@ const ResetPasswordForm = () => {
     }
   };
 
-  const calculatePasswordStrength = (password) => {
-    if (!password) return 0;
-    let strength = 0;
-    if (password.length >= 8) strength += 1;
-    if (password.length >= 12) strength += 1;
-    if (/[A-Z]/.test(password)) strength += 1;
-    if (/[a-z]/.test(password)) strength += 1;
-    if (/[0-9]/.test(password)) strength += 1;
-    return Math.min(strength, 5);
-  };
-
-  const getStrengthText = (strength) => {
-    switch (strength) {
-      case 0:
-        return "ว่าง";
-      case 1:
-        return "อ่อนมาก";
-      case 2:
-        return "อ่อน";
-      case 3:
-        return "ปานกลาง";
-      case 4:
-        return "แข็งแรง";
-      case 5:
-        return "แข็งแรงมาก";
-      default:
-        return "ว่าง";
-    }
-  };
-
-  const getStrengthColor = (strength) => {
-    switch (strength) {
-      case 1:
-        return "bg-red-500";
-      case 2:
-        return "bg-orange-500";
-      case 3:
-        return "bg-yellow-500";
-      case 4:
-        return "bg-blue-500";
-      case 5:
-        return "bg-green-500";
-      default:
-        return "bg-gray-200";
-    }
-  };
-
+  // Update the isFormValid function to remove the password length check
   const isFormValid = () => {
     return (
-      formData.password.length >= 8 &&
       formData.password === formData.confirmPassword &&
       formData.password !== "" &&
       token
     );
   };
-
-  const passwordStrength = calculatePasswordStrength(formData.password);
 
   if (tokenError) {
     return (
@@ -201,36 +153,6 @@ const ResetPasswordForm = () => {
                   {errors.password && (
                     <div className="mt-2 text-sm text-red-600">
                       {errors.password.join(", ")}
-                    </div>
-                  )}
-                  {formData.password && (
-                    <div className="mt-2">
-                      <div className="text-sm text-gray-600 mb-1">
-                        ความแข็งแรงของรหัสผ่าน:{" "}
-                        <span
-                          className={`ml-1 font-medium ${
-                            passwordStrength >= 4
-                              ? "text-green-600"
-                              : passwordStrength >= 3
-                              ? "text-yellow-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {getStrengthText(passwordStrength)}
-                        </span>
-                      </div>
-                      <div className="flex h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
-                        {[1, 2, 3, 4, 5].map((level) => (
-                          <div
-                            key={level}
-                            className={`h-full w-1/5 ${
-                              level <= passwordStrength
-                                ? getStrengthColor(passwordStrength)
-                                : "bg-gray-200"
-                            }`}
-                          />
-                        ))}
-                      </div>
                     </div>
                   )}
                 </div>

@@ -1,98 +1,71 @@
 import React, { useState, useEffect } from "react";
+import { message } from "antd"; // เพิ่มการนำเข้า message จาก Ant Design
+import { useNavigate } from "react-router-dom"; // เพิ่ม useNavigate เพื่อการเปลี่ยนเส้นทาง
 import RequisitionTab from "../Custom/RequisitionTab";
 import HistoryTab from "../Custom/HistoryTab";
 import ProductEntryTab from "../Custom/ProductEntryTab";
 
 const Requisition = () => {
   const [activeTab, setActiveTab] = useState("requisition");
-
-  // Requisition State
   const [requisitionData, setRequisitionData] = useState([]);
   const [quantities, setQuantities] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredRequisitionData, setFilteredRequisitionData] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // History State (unchanged)
-  const [historySearchValue, setHistorySearchValue] = useState("");
-  const [filteredHistoryData, setFilteredHistoryData] = useState([]);
-
-  // Product Entry State (unchanged)
-  const [entrySearchValue, setEntrySearchValue] = useState("");
-  const [filteredEntryData, setFilteredEntryData] = useState([]);
-
-  // Static Data for History (unchanged)
-  const historyData = [
-    {
-      key: "1",
-      requisitionNumber: "846065",
-      date: "1/มีนา/2567",
-      products: [
-        { name: "ASUS VIVOBOOK", quantity: 10 },
-        { name: "ACER ASPIRE 3", quantity: 2 },
-      ],
-    },
-    {
-      key: "2",
-      requisitionNumber: "846075",
-      date: "1/มีนา/2567",
-      products: [{ name: "ACER ASPIRE 3", quantity: 5 }],
-    },
-    {
-      key: "3",
-      requisitionNumber: "846085",
-      date: "1/มีนา/2567",
-      products: [
-        { name: "ASUS VIVOBOOK", quantity: 1 },
-        { name: "ACER ASPIRE 3", quantity: 2 },
-      ],
-    },
-  ];
-
-  // Static Data for Product Entry (unchanged)
-  const productEntryData = [
-    {
-      key: "1",
-      entryNumber: "ENT-001",
-      date: "1/มกรา/2567",
-      products: [
-        { name: "ASUS VIVOBOOK", quantity: 20 },
-        { name: "ACER ASPIRE 3", quantity: 10 },
-      ],
-    },
-    {
-      key: "2",
-      entryNumber: "ENT-002",
-      date: "15/กุมภา/2567",
-      products: [{ name: "ASUS VIVOBOOK", quantity: 15 }],
-    },
-    {
-      key: "3",
-      entryNumber: "ENT-003",
-      date: "20/มีนา/2567",
-      products: [
-        { name: "ACER ASPIRE 3", quantity: 5 },
-        { name: "LENOVO IDEAPAD", quantity: 8 },
-      ],
-    },
-  ];
+  const navigate = useNavigate(); // เพิ่มตัวแปร navigate
 
   // Fetch Requisition Data from API
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const response = await fetch("http://172.18.43.37:3000/api/cell/cellsAll");
-        const data = await response.json();
+        const token = localStorage.getItem("authToken");
+        const employeeId = localStorage.getItem("employeeId");
 
-        // Format the API data to match the expected structure
-        const formattedData = data.map((item, index) => ({
+        // ตรวจสอบการยืนยันตัวตน
+        if (!token || !employeeId) {
+          message.error("กรุณาเข้าสู่ระบบก่อน");
+          navigate("/");
+          return;
+        }
+
+        const response = await fetch("http://172.18.43.37:3000/api/cell/cellsAll", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            message.error("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("employeeId");
+            navigate("/");
+            return;
+          }
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("API response:", result); // ตรวจสอบโครงสร้างข้อมูล
+
+        // ตรวจสอบว่า API ส่งคืนข้อมูลในรูปแบบที่ถูกต้องหรือไม่
+        if (!result.success || !Array.isArray(result.data)) {
+          console.error("API response is invalid or data is not an array:", result);
+          throw new Error("ข้อมูลจาก API ไม่ถูกต้องหรือไม่ใช่อาร์เรย์");
+        }
+
+        // แปลงข้อมูลจาก result.data
+        const formattedData = result.data.map((item, index) => ({
           key: String(index + 1),
           no: String(index + 1),
-          id: item.id || `#${index + 876364}`, // Fallback ID
+          id: item.id || `#${index + 876364}`,
           type: item.type || "Unknown",
           name: item.name || "Unknown",
-          image: item.image || "https://via.placeholder.com/40", // Default image
+          image: item.image || "https://via.placeholder.com/40",
           location: item.location || "Unknown",
           in: item.in || "N/A",
           end: item.end || "N/A",
@@ -101,20 +74,20 @@ const Requisition = () => {
 
         setRequisitionData(formattedData);
         setFilteredRequisitionData(formattedData);
-        setQuantities(formattedData.map(() => 0)); // Initialize quantities
-        setLoading(false);
+        setQuantities(formattedData.map(() => 0));
       } catch (error) {
         console.error("Error fetching requisition data:", error);
-        setLoading(false);
-        // Optionally, set fallback data if API fails
+        message.error(`เกิดข้อผิดพลาดในการดึงข้อมูล: ${error.message}`);
         setRequisitionData([]);
         setFilteredRequisitionData([]);
         setQuantities([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [navigate]); // เพิ่ม navigate เป็น dependency
 
   return (
     <div className="flex flex-col items-center min-h-screen p-4">
@@ -171,25 +144,9 @@ const Requisition = () => {
         />
       )}
 
-      {activeTab === "history" && (
-        <HistoryTab
-          historyData={historyData}
-          historySearchValue={historySearchValue}
-          setHistorySearchValue={setHistorySearchValue}
-          filteredHistoryData={filteredHistoryData}
-          setFilteredHistoryData={setFilteredHistoryData}
-        />
-      )}
+      {activeTab === "history" && <HistoryTab />}
 
-      {activeTab === "productEntry" && (
-        <ProductEntryTab
-          productEntryData={productEntryData}
-          entrySearchValue={entrySearchValue}
-          setEntrySearchValue={setEntrySearchValue}
-          filteredEntryData={filteredEntryData}
-          setFilteredEntryData={setFilteredEntryData}
-        />
-      )}
+      {activeTab === "productEntry" && <ProductEntryTab />}
     </div>
   );
 };

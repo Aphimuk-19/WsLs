@@ -32,7 +32,7 @@ createRoot(document.getElementById("root")).render(
           <Route path="/Login" element={<Login />} />
           <Route path="/Register" element={<Register />} />
           <Route path="/PasswordResetLink" element={<PasswordResetLink />} />
-          <Route path="/reset-password/*" element={<ResetPasswordForm />} />
+          <Route path="/reset-password" element={<ResetPasswordForm />} />
           <Route path="/EditProfilePage" element={<EditProfilePage />} />
           <Route path="/Addproduct" element={<Addproduct />} />
           <Route path="/Exportpage" element={<Exportpage />} />

@@ -253,17 +253,17 @@ const ProductLocation = () => {
       if (!token) throw new Error("กรุณาเข้าสู่ระบบ");
 
       const response = await axios.get(
-        "http://172.18.43.37:3000/api/bill/allBills/",
+        `http://172.18.43.37:3000/api/bill/billNumber/${billNumber}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      if (!response.data.success) throw new Error("Invalid API response");
+      console.log("API Response:", response.data);
 
-      const billData = response.data.data.find(
-        (bill) => bill.billNumber === billNumber
-      );
+      if (!response.data.success) throw new Error(response.data.error || "Invalid API response");
+
+      const billData = response.data.data;
       if (!billData) {
         setError("ไม่พบเลขที่บิลนี้ในระบบ");
         setLoading(false);
@@ -283,14 +283,24 @@ const ProductLocation = () => {
       }, 1500);
     } catch (error) {
       setLoading(false);
+      console.error("Error validating bill number:", error.message, error.response?.data);
       if (error.response?.status === 401) {
         setError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
         localStorage.removeItem("authToken");
         setTimeout(() => navigate("/login"), 2000);
+      } else if (error.response?.status === 400) {
+        setError("เลขบิลไม่ถูกต้อง: ต้องเป็นสตริงและไม่ว่างเปล่า");
+        message.error("เลขบิลไม่ถูกต้อง");
+      } else if (error.response?.status === 404) {
+        setError(`ไม่พบบิลที่มีเลขที่: ${billNumber}`);
+        message.error("ไม่พบเลขที่บิลนี้ในระบบ");
+      } else if (error.response?.status === 500) {
+        setError("เกิดข้อผิดพลาดในเซิร์ฟเวอร์ กรุณาลองใหม่ภายหลัง");
+        message.error("เกิดข้อผิดพลาดในเซิร์ฟเวอร์");
       } else {
         setError(error.message || "เกิดข้อผิดพลาดในการตรวจสอบเลขที่บิล");
+        message.error(error.message);
       }
-      console.error("Error validating bill number:", error.message);
     }
   };
 
@@ -395,7 +405,7 @@ const ProductLocation = () => {
           <Spin spinning={loading} tip="กำลังตรวจสอบ...">
             <form
               onSubmit={(e) => {
-                e.preventDefault(); // ป้องกันการ refresh หน้า
+                e.preventDefault();
                 handleSubmit();
               }}
               className="bg-white p-8 rounded-lg shadow-xl w-[450px]"
@@ -419,7 +429,7 @@ const ProductLocation = () => {
               {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
               <div className="flex justify-end gap-4">
                 <button
-                  type="button" // ป้องกันการ submit จากปุ่มนี้
+                  type="button"
                   onClick={handleCancel}
                   className="px-5 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-700 font-medium transition-all"
                   disabled={loading}
@@ -427,7 +437,7 @@ const ProductLocation = () => {
                   ยกเลิก
                 </button>
                 <button
-                  type="submit" // ปุ่มนี้จะ trigger form submit
+                  type="submit"
                   onClick={handleSubmit}
                   className="px-5 py-2 bg-[#006ec4] text-white rounded-lg hover:bg-[#006ec4] hover:brightness-110 font-medium transition-all"
                   disabled={loading}
