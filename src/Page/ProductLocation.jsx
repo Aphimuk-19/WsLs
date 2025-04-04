@@ -261,7 +261,8 @@ const ProductLocation = () => {
 
       console.log("API Response:", response.data);
 
-      if (!response.data.success) throw new Error(response.data.error || "Invalid API response");
+      if (!response.data.success)
+        throw new Error(response.data.error || "Invalid API response");
 
       const billData = response.data.data;
       if (!billData) {
@@ -283,7 +284,11 @@ const ProductLocation = () => {
       }, 1500);
     } catch (error) {
       setLoading(false);
-      console.error("Error validating bill number:", error.message, error.response?.data);
+      console.error(
+        "Error validating bill number:",
+        error.message,
+        error.response?.data
+      );
       if (error.response?.status === 401) {
         setError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
         localStorage.removeItem("authToken");
@@ -628,14 +633,14 @@ const ProductLocation = () => {
                 <div className="w-[60px] text-center">{item.no}</div>
                 <div className="w-[120px] text-center">{item.id}</div>
                 <div className="w-[100px] text-center">{item.type}</div>
-                <div className="w-[220px] flex items-center justify-center text-center">
+                <div className="w-[220px] flex items-center justify-start text-center">
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-10 h-10 rounded-full mr-2"
+                    className="w-10 h-10 object-contain mr-2"
                     onError={handleImageError}
                   />
-                  <span>{item.name}</span>
+                  <span className="text-left">{item.name}</span>
                 </div>
                 <div className="w-[100px] text-center">{item.location}</div>
                 <div className="w-[80px] text-center">{item.quantity}</div>

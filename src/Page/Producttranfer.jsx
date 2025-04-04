@@ -295,7 +295,7 @@ const ProductTransfer = () => {
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-10 h-10 rounded-full mx-auto"
+                        className="w-10 h-10 object-contain mx-auto" 
                         onError={handleImageError}
                       />
                     </td>
@@ -360,7 +360,7 @@ const ProductTransfer = () => {
                         <img
                           src={item.image}
                           alt={item.name}
-                          className="w-10 h-10 rounded-md mx-auto"
+                          className="w-10 h-10 object-contain mx-auto" 
                           onError={handleImageError}
                         />
                       </td>

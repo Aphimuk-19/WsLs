@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Dropdown, Space, Badge, Menu } from "antd";
+import { Dropdown, Space, Badge
+
+, Menu } from "antd";
 import {
   DownOutlined,
   SwapOutlined,
@@ -118,12 +120,11 @@ const Sidebar = () => {
     navigate(`/${selectedPage}`);
   };
 
-  // Modified handleLogoClick to maintain current page
   const handleLogoClick = () => {
-    // Remove the navigation to Dashboard and keep current page state
-    // Only toggle the collapse state if needed, but in this case, we'll do nothing special
-    // Since we want to keep the current page, we don't need to change headerText or currentPage
-    console.log("Logo clicked, maintaining current page:", currentPage);
+    setHeaderText("Dashboard");
+    setCurrentPage("Dashboard");
+    navigate("/Dashboard");
+    console.log("Logo clicked, navigating to Dashboard");
   };
 
   const getSelectedKey = () => {

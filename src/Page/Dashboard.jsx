@@ -49,127 +49,143 @@ const Dashboard = () => {
     ],
   });
 
+  // ฟังก์ชันดึงข้อมูล 5 รายการล่าสุด
+  const fetchLatestItems = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
+      }
+
+      const response = await fetch("http://172.18.43.37:3000/api/dashboard/latest-items", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        const formattedData = result.data.map((item, index) => ({
+          key: String(index + 1),
+          Trackingno: item.trackingNo,
+          ProductName: item.productName,
+          Status: item.status === "in" ? "เข้า" : "ออก",
+          Amount: String(item.amount),
+        }));
+        setLatestItems(formattedData);
+      }
+    } catch (error) {
+      console.error("Error fetching latest items:", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ฟังก์ชันดึงข้อมูลสินค้าเข้าและออกประจำวัน
+  const fetchDailyItems = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
+      }
+
+      const response = await fetch("http://172.18.43.37:3000/api/dashboard/daily-items", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setDailyItems({
+          inCount: result.data.inCount || 0,
+          outCount: result.data.outCount || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching daily items:", error.message);
+    }
+  };
+
+  // ฟังก์ชันดึงข้อมูลสำหรับกราฟ
+  const fetchChartData = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
+      }
+
+      const response = await fetch("http://172.18.43.37:3000/api/cell/summary", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        const { data } = result;
+        setChartData({
+          labels: ["ว่าง", "ใช้งานได้", "เต็ม", "ปิดการใช้งาน"],
+          datasets: [
+            {
+              data: [
+                data.emptyBoxes,
+                data.activeBoxes,
+                data.inactiveBoxes,
+                data.disabledBoxes,
+              ],
+              backgroundColor: ["#FFFFFF", "#0A8F08", "#FF0000", "#6B7280"],
+              borderWidth: 1,
+              borderColor: "#E5E7EB",
+            },
+          ],
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching chart data:", error.message);
+    }
+  };
+
+  // ตั้งค่า Polling เพื่ออัปเดตข้อมูลทุก 5 วินาที
   useEffect(() => {
-    const fetchLatestItems = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
-        }
-
-        const response = await fetch("http://172.18.43.37:3000/api/dashboard/latest-items", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        if (result.success) {
-          const formattedData = result.data.map((item, index) => ({
-            key: String(index + 1),
-            Trackingno: item.trackingNo,
-            ProductName: item.productName,
-            Status: item.status === "in" ? "เข้า" : "ออก",
-            Amount: String(item.amount),
-          }));
-          setLatestItems(formattedData);
-        }
-      } catch (error) {
-        console.error("Error fetching latest items:", error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchChartData = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
-        }
-
-        const response = await fetch("http://172.18.43.37:3000/api/cell/summary", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        if (result.success) {
-          const { data } = result;
-          setChartData({
-            labels: ["ว่าง", "ใช้งานได้", "เต็ม", "ปิดการใช้งาน"],
-            datasets: [
-              {
-                data: [
-                  data.emptyBoxes,
-                  data.activeBoxes,
-                  data.inactiveBoxes,
-                  data.disabledBoxes,
-                ],
-                backgroundColor: ["#FFFFFF", "#0A8F08", "#FF0000", "#6B7280"],
-                borderWidth: 1,
-                borderColor: "#E5E7EB",
-              },
-            ],
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching chart data:", error.message);
-      }
-    };
-
-    const fetchDailyItems = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
-        }
-
-        const response = await fetch("http://172.18.43.37:3000/api/dashboard/daily-items", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        if (result.success) {
-          setDailyItems({
-            inCount: result.data.inCount || 0,
-            outCount: result.data.outCount || 0
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching daily items:", error.message);
-      }
-    };
-
+    // ดึงข้อมูลครั้งแรกเมื่อโหลดหน้า
     fetchLatestItems();
-    fetchChartData();
     fetchDailyItems();
+    fetchChartData();
+
+    // ตั้ง Polling ทุก 5 วินาทีสำหรับทุกฟังก์ชัน
+    const interval = setInterval(() => {
+      fetchLatestItems();
+      fetchDailyItems();
+      fetchChartData();
+    }, 5000); // 5000ms = 5 วินาที
+
+    // ล้าง interval เมื่อ component ถูกปิด
+    return () => clearInterval(interval);
   }, []);
 
   return (
     <Content className="mt-10">
       <div className="flex justify-center items-center mt-[16px] gap-6">
+        {/* ส่วนสินค้าเข้าแล้วออก */}
         <div className="w-[478px] h-[344px] bg-white rounded-xl p-5 flex flex-col">
           <h1 className="opacity-70 text-[#030229] text-lg font-bold">
             สินค้าเข้าแล้วออก
@@ -219,6 +235,7 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* ส่วน 5 รายการล่าสุด */}
         <div className="w-[875px] h-[344px] bg-white rounded-xl overflow-hidden flex flex-col">
           <h1 className="opacity-70 text-[#030229] text-lg font-bold pt-5 pl-5">
             5 รายการล่าสุด
@@ -282,6 +299,7 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* ส่วนอื่นๆ */}
       <div className="flex justify-center items-center gap-6 mt-[16px]">
         <div className="w-[875px] h-[344px] bg-white rounded-[10px] flex flex-col p-4">
           <div className="flex-1">

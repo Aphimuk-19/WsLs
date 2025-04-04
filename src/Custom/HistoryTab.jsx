@@ -1,23 +1,32 @@
-import React, { useState, useEffect } from "react";
-import { Button, Input, Space, Table, message } from "antd";
+import React, { useState, useEffect, useRef } from "react";
+import { Button, Input, Space, Table, message, DatePicker } from "antd";
 import { SearchOutlined, FilterOutlined, CopyOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs"; // Use dayjs
+import "dayjs/locale/en"; // Import English locale for dayjs
+import locale from "antd/es/date-picker/locale/en_US"; // Ant Design English locale
+
+// Set dayjs to use English locale
+dayjs.locale("en");
+
 const { Search } = Input;
 
 const HistoryTab = () => {
   const [historyData, setHistoryData] = useState([]);
   const [historySearchValue, setHistorySearchValue] = useState("");
   const [filteredHistoryData, setFilteredHistoryData] = useState([]);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false); // State to control DatePicker visibility
   const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
   const navigate = useNavigate();
+  const filterButtonRef = useRef(null); // Ref to the filter button
 
   useEffect(() => {
     const fetchHistoryData = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem("authToken");
-        const loggedInEmployeeId = localStorage.getItem("employeeId"); // ดึง employeeId จาก localStorage
+        const loggedInEmployeeId = localStorage.getItem("employeeId");
 
         if (!token) {
           message.error("กรุณาเข้าสู่ระบบก่อน");
@@ -60,12 +69,10 @@ const HistoryTab = () => {
           throw new Error("ข้อมูลจาก API ไม่ใช่อาร์เรย์");
         }
 
-        // กรองข้อมูลเฉพาะ employeeId ที่ตรงกับผู้ใช้ที่ล็อกอิน
         const filteredData = result.data.filter(
           (item) => item.employeeId === loggedInEmployeeId
         );
 
-        // แปลงข้อมูลที่กรองแล้ว
         const transformedData = filteredData.map((item, index) => {
           const products = (item.items || []).map((productString) => {
             const match = productString.match(/^(.*)\s*\[(\d+)\]$/);
@@ -99,25 +106,73 @@ const HistoryTab = () => {
     fetchHistoryData();
   }, [navigate]);
 
+  // Function to parse Thai date format "DD เดือน YYYY" to a dayjs object
+  const parseThaiDate = (thaiDate) => {
+    if (thaiDate === "ไม่ระบุวันที่") return null;
+
+    const thaiMonths = {
+      "มกราคม": 1,
+      "กุมภาพันธ์": 2,
+      "มีนาคม": 3,
+      "เมษายน": 4,
+      "พฤษภาคม": 5,
+      "มิถุนายน": 6,
+      "กรกฎาคม": 7,
+      "สิงหาคม": 8,
+      "กันยายน": 9,
+      "ตุลาคม": 10,
+      "พฤศจิกายน": 11,
+      "ธันวาคม": 12,
+    };
+
+    const [day, month, year] = thaiDate.split(" ");
+    const monthNumber = thaiMonths[month];
+    if (!monthNumber) return null;
+
+    // Convert Thai Buddhist year (e.g., 2568) to Gregorian year (e.g., 2025)
+    const gregorianYear = parseInt(year, 10) - 543;
+
+    return dayjs(`${gregorianYear}-${monthNumber}-${day}`, "YYYY-M-D");
+  };
+
   const handleHistorySearch = (value) => {
     setHistorySearchValue(value);
-    if (value) {
-      const filtered = historyData.filter(
+    applyFilters(value, selectedDate);
+  };
+
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+    applyFilters(historySearchValue, date);
+    setIsDatePickerOpen(false); // Close the DatePicker after selecting a date
+  };
+
+  const applyFilters = (searchValue, date) => {
+    let filtered = [...historyData];
+
+    if (searchValue) {
+      filtered = filtered.filter(
         (item) =>
           item.products.some((product) =>
-            product.name.toLowerCase().includes(value.toLowerCase())
+            product.name.toLowerCase().includes(searchValue.toLowerCase())
           ) ||
-          item.requisitionNumber.toLowerCase().includes(value.toLowerCase())
+          item.requisitionNumber.toLowerCase().includes(searchValue.toLowerCase())
       );
-      setFilteredHistoryData(filtered);
-    } else {
-      setFilteredHistoryData([]);
     }
+
+    if (date) {
+      const formattedDate = date.format("YYYY-MM-DD");
+      filtered = filtered.filter((item) => {
+        const itemDate = parseThaiDate(item.date);
+        if (!itemDate) return false;
+        return itemDate.isSame(formattedDate, "day");
+      });
+    }
+
+    setFilteredHistoryData(filtered);
   };
 
   const handleHistoryFilterClick = () => {
-    setIsFilterOpen(!isFilterOpen);
-    console.log("Filter toggled:", !isFilterOpen);
+    setIsDatePickerOpen(true); // Open the DatePicker when the filter button is clicked
   };
 
   const handleOpenPDF = (record) => {
@@ -175,19 +230,31 @@ const HistoryTab = () => {
           onChange={(e) => handleHistorySearch(e.target.value)}
           style={{ width: 1120 }}
         />
-        <Button
-          icon={<FilterOutlined />}
-          onClick={handleHistoryFilterClick}
-          type="primary"
-          style={{ backgroundColor: "#006ec4", borderColor: "#006ec4", width: 232 }}
-        >
-          ตัวกรอง
-        </Button>
+        <div style={{ position: "relative" }}>
+          <Button
+            ref={filterButtonRef}
+            icon={<FilterOutlined />}
+            onClick={handleHistoryFilterClick}
+            type="primary"
+            style={{ backgroundColor: "#006ec4", borderColor: "#006ec4", width: 232 }}
+          >
+            ตัวกรอง
+          </Button>
+          <DatePicker
+            open={isDatePickerOpen}
+            onChange={handleDateChange}
+            onOpenChange={(open) => setIsDatePickerOpen(open)} // Update state when DatePicker opens/closes
+            format="DD/MM/YYYY"
+            locale={locale}
+            getPopupContainer={() => filterButtonRef.current} // Position the DatePicker relative to the button
+            style={{ position: "absolute", visibility: "hidden" }} // Hide the input field
+          />
+        </div>
       </Space>
 
       <div className="w-[1400px]">
         <Table
-          dataSource={historySearchValue ? filteredHistoryData : historyData}
+          dataSource={historySearchValue || selectedDate ? filteredHistoryData : historyData}
           columns={historyColumns}
           pagination={false}
           bordered

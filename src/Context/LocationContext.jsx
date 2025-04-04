@@ -12,6 +12,7 @@ export const LocationProvider = ({ children }) => {
   const [isChoosingToSplit, setIsChoosingToSplit] = useState(false);
   const navigate = useNavigate();
 
+  // ฟังก์ชันดึงข้อมูลเซลล์ทั้งหมดจาก API
   const fetchCells = async () => {
     try {
       const response = await fetch("http://172.18.43.37:3000/api/cell/cellsAll");
@@ -71,8 +72,13 @@ export const LocationProvider = ({ children }) => {
     }
   };
 
+  // ตั้งค่า Polling เพื่ออัปเดตข้อมูลทุก 5 วินาที
   useEffect(() => {
     fetchCells();
+    const interval = setInterval(() => {
+      fetchCells();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleCellClick = (row, col) => {
@@ -260,7 +266,10 @@ export const LocationProvider = ({ children }) => {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error("Failed to create cell");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create cell: ${errorText}`);
+      }
 
       const newCell = { row: newRow, column: newCol, id: newCellId, subCells: [] };
       setNewCells((prevCells) => ({
@@ -276,12 +285,12 @@ export const LocationProvider = ({ children }) => {
       setCellStatus((prevStatus) => ({ ...prevStatus, [newCellId]: 0 }));
       fetchCells();
     } catch (error) {
-      console.error("Failed to add cell:", error.message);
+      console.error("Failed to add cell:", error);
       if (error.message.includes("401")) {
         localStorage.removeItem("authToken");
         navigate("/login");
       }
-      throw error;
+      throw new Error(`Failed to add cell: ${error.message}`);
     }
   };
 

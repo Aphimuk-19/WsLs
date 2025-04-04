@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Button, Input, Space } from "antd";
+import { Button, Input, Space, message } from "antd"; // เพิ่ม message จาก antd
 import { SearchOutlined, FilterOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 const { Search } = Input;
 
-const CustomInputNumber = ({ value = 0, onChange, min = 0, max = Infinity }) => {
+// CustomInputNumber component (ไม่มีการเปลี่ยนแปลง)
+const CustomInputNumber = ({
+  value = 0,
+  onChange,
+  min = 0,
+  max = Infinity,
+}) => {
   const [inputValue, setInputValue] = React.useState(value);
 
   const handleIncrement = () => {
@@ -64,47 +70,39 @@ const RequisitionTab = () => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
   const BASE_URL = "http://172.18.43.37:3000";
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("authToken");
-        if (!token) {
+        if (!token)
           throw new Error("No authentication token found. Please log in.");
-        }
 
         const response = await fetch(`${BASE_URL}/api/cell/cellsAll`, {
           headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
 
-        if (!response.ok) {
+        if (!response.ok)
           throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
         const data = await response.json();
-        console.log("Raw API response from /api/cell/cellsAll:", data);
 
-        if (!data || typeof data !== "object") {
-          throw new Error("Invalid API response: Expected an object but got something else");
-        }
-
-        if (!data.success) {
-          throw new Error(data.message || "API returned an unsuccessful response");
-        }
+        if (!data.success)
+          throw new Error(
+            data.message || "API returned an unsuccessful response"
+          );
 
         const cells = Array.isArray(data.data) ? data.data : [];
-        if (!Array.isArray(data.data)) {
-          console.warn("API response 'data.data' is not an array:", data.data);
-        }
-
         const formattedData = cells.flatMap((cell) => {
           const products = [];
-          if (cell.divisionType !== "dual" && cell.products && Array.isArray(cell.products)) {
+          if (
+            cell.divisionType !== "dual" &&
+            cell.products &&
+            Array.isArray(cell.products)
+          ) {
             cell.products.forEach((product) => {
               products.push({
                 key: `${cell.cellId}-${product.product.productId}`,
@@ -120,7 +118,11 @@ const RequisitionTab = () => {
             });
           }
           if (cell.divisionType === "dual") {
-            if (cell.subCellsA && cell.subCellsA.products && Array.isArray(cell.subCellsA.products)) {
+            if (
+              cell.subCellsA &&
+              cell.subCellsA.products &&
+              Array.isArray(cell.subCellsA.products)
+            ) {
               cell.subCellsA.products.forEach((product) => {
                 products.push({
                   key: `${cell.cellId}-A-${product.product.productId}`,
@@ -135,7 +137,11 @@ const RequisitionTab = () => {
                 });
               });
             }
-            if (cell.subCellsB && cell.subCellsB.products && Array.isArray(cell.subCellsB.products)) {
+            if (
+              cell.subCellsB &&
+              cell.subCellsB.products &&
+              Array.isArray(cell.subCellsB.products)
+            ) {
               cell.subCellsB.products.forEach((product) => {
                 products.push({
                   key: `${cell.cellId}-B-${product.product.productId}`,
@@ -179,7 +185,6 @@ const RequisitionTab = () => {
   const handleAddItem = (index) => {
     const item = filteredRequisitionData[index];
     const quantity = quantities[index];
-
     if (quantity > 0) {
       const newSelectedItem = { ...item, requestedQuantity: quantity };
       setSelectedItems((prev) => {
@@ -215,6 +220,7 @@ const RequisitionTab = () => {
     console.log("Filter button clicked");
   };
 
+  // แก้ไข handleConfirm เพื่อเพิ่ม message
   const handleConfirm = async () => {
     if (selectedItems.length === 0) return;
 
@@ -229,37 +235,54 @@ const RequisitionTab = () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
       console.error("No token found in localStorage");
-      alert("กรุณาล็อกอินใหม่เพื่อดำเนินการต่อ");
+      message.error("กรุณาล็อกอินใหม่เพื่อดำเนินการต่อ");
       return;
     }
 
     try {
-      console.log("Sending payload to /api/withdraw/withdraw:", JSON.stringify(payload));
-      const response = await fetch("http://172.18.43.37:3000/api/withdraw/withdraw", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      console.log(
+        "Sending payload to /api/withdraw/withdraw:",
+        JSON.stringify(payload)
+      );
+      const response = await fetch(
+        "http://172.18.43.37:3000/api/withdraw/withdraw",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const result = await response.json();
       if (response.ok) {
         console.log("Withdraw successful:", result);
         const pdfUrl = `http://172.18.43.37:3000${result.data.pdfUrl}`;
+
+        // สร้างข้อความแสดงรายการที่เบิก
+        const withdrawnItemsMessage = selectedItems
+          .map((item) => `${item.name} จำนวน ${item.requestedQuantity}`)
+          .join(", ");
+        message.success({
+          content: `เบิกสินค้าสำเร็จ! รายการที่ตัดออก: ${withdrawnItemsMessage}`,
+          duration: 5, // แสดงนาน 5 วินาที
+        });
+
         setSelectedItems([]);
         setQuantities(requisitionData.map(() => 0));
-        alert("เบิกสินค้าสำเร็จ!");
-        window.open(pdfUrl, "_blank"); // เปิด PDF ในแท็บใหม่
-        window.location.reload(); // รีเฟรชหน้า
+        window.open(pdfUrl, "_blank");
+        window.location.reload();
       } else {
         console.error("Withdraw failed:", result);
-        alert(`เกิดข้อผิดพลาด: ${result.message || "ไม่สามารถดำเนินการได้"}`);
+        message.error(
+          `เกิดข้อผิดพลาด: ${result.message || "ไม่สามารถดำเนินการได้"}`
+        );
       }
     } catch (error) {
       console.error("Error during withdraw:", error.message);
-      alert(`เกิดข้อผิดพลาด: ${error.message}`);
+      message.error(`เกิดข้อผิดพลาด: ${error.message}`);
     }
   };
 
@@ -268,13 +291,14 @@ const RequisitionTab = () => {
     setQuantities(requisitionData.map(() => 0));
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
 
   return (
     <>
-      <Space direction="horizontal" style={{ marginBottom: 16, display: "flex", gap: 35 }}>
+      <Space
+        direction="horizontal"
+        style={{ marginBottom: 16, display: "flex", gap: 35 }}
+      >
         <Search
           placeholder="ค้นหาสินค้า..."
           allowClear
@@ -287,7 +311,11 @@ const RequisitionTab = () => {
           icon={<FilterOutlined />}
           onClick={handleFilterClick}
           type="primary"
-          style={{ backgroundColor: "#006ec4", borderColor: "#006ec4", width: 232 }}
+          style={{
+            backgroundColor: "#006ec4",
+            borderColor: "#006ec4",
+            width: 232,
+          }}
         >
           ตัวกรอง
         </Button>
@@ -298,10 +326,14 @@ const RequisitionTab = () => {
           <table className="w-full table-fixed">
             <thead>
               <tr className="bg-gray-200 border-b border-gray-300 h-15">
-                <th className="p-2 text-sm text-center w-[150px]">รหัสสินค้า</th>
+                <th className="p-2 text-sm text-center w-[150px]">
+                  รหัสสินค้า
+                </th>
                 <th className="p-2 text-sm text-center w-[120px]">หมวดหมู่</th>
                 <th className="p-2 text-sm text-center w-[100px]">รูป</th>
-                <th className="p-2 text-sm text-center w-[200px]">ชื่อสินค้า</th>
+                <th className="p-2 text-sm text-center w-[200px]">
+                  ชื่อสินค้า
+                </th>
                 <th className="p-2 text-sm text-center w-[100px]">คงเหลือ</th>
                 <th className="p-2 text-sm text-center w-[120px]">จำนวน</th>
                 <th className="p-2 text-sm text-center w-[100px]"></th>
@@ -309,11 +341,18 @@ const RequisitionTab = () => {
             </thead>
             <tbody>
               {filteredRequisitionData.map((item, index) => (
-                <tr key={item.key} className="border-b border-gray-300 hover:bg-gray-50 h-15">
+                <tr
+                  key={item.key}
+                  className="border-b border-gray-300 hover:bg-gray-50 h-15"
+                >
                   <td className="p-2 text-sm text-center">{item.id}</td>
                   <td className="p-2 text-sm text-center">{item.type}</td>
                   <td className="p-2 text-sm text-center">
-                    <img src={item.image} alt={item.name} className="w-10 h-10 rounded-full mx-auto" />
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-10 h-10 object-contain mx-auto" 
+                    />
                   </td>
                   <td className="p-2 text-sm text-center">{item.name}</td>
                   <td className="p-2 text-sm text-center">{item.quantity}</td>
@@ -328,7 +367,10 @@ const RequisitionTab = () => {
                   <td className="p-2 text-sm text-center">
                     <Button
                       type="primary"
-                      style={{ backgroundColor: "#3A974C", borderColor: "#52c41a" }}
+                      style={{
+                        backgroundColor: "#3A974C",
+                        borderColor: "#52c41a",
+                      }}
                       onClick={() => handleAddItem(index)}
                     >
                       เพิ่ม
@@ -355,7 +397,11 @@ const RequisitionTab = () => {
                   {selectedItems.map((item) => (
                     <tr key={item.key} className="h-12">
                       <td className="p-2 text-sm text-left w-[100px] border-b border-gray-300">
-                        <img src={item.image} alt={item.name} className="w-10 h-10 rounded-md mx-auto" />
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-10 h-10 object-contain mx-auto"
+                        />
                       </td>
                       <td className="p-2 text-sm text-left w-[250px] border-b border-gray-300">
                         {item.name}
@@ -392,7 +438,12 @@ const RequisitionTab = () => {
           <Button
             onClick={handleConfirm}
             type="primary"
-            style={{ width: 100, backgroundColor: "#006ec4", borderColor: "#006ec4", color: "#fff" }}
+            style={{
+              width: 100,
+              backgroundColor: "#006ec4",
+              borderColor: "#006ec4",
+              color: "#fff",
+            }}
             disabled={selectedItems.length === 0}
           >
             ยืนยัน
