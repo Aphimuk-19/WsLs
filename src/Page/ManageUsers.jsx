@@ -3,6 +3,7 @@ import { Input, Tag, Select, Dropdown, Menu, message, Modal } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { BASE_URL } from '../config/config'; // Add this import
 
 const { confirm } = Modal;
 
@@ -24,7 +25,7 @@ const ManageUsers = () => {
           return;
         }
 
-        const response = await axios.get("http://172.18.43.37:3000/api/users/all", {
+        const response = await axios.get(`${BASE_URL}/api/users/all`, { // Updated URL
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -82,7 +83,7 @@ const ManageUsers = () => {
       }
 
       await axios.put(
-        `http://172.18.43.37:3000/api/role/change/${user.employeeId}`,
+        `${BASE_URL}/api/role/change/${user.employeeId}`, // Updated URL
         { role: value },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -119,7 +120,7 @@ const ManageUsers = () => {
           }
 
           await axios.put(
-            `http://172.18.43.37:3000/api/users/status/${user.employeeId}`,
+            `${BASE_URL}/api/users/status/${user.employeeId}`, // Updated URL
             { userstatus: "false" }, // ส่ง string "false" ตาม API เดิม
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -162,7 +163,7 @@ const ManageUsers = () => {
           }
 
           await axios.put(
-            `http://172.18.43.37:3000/api/users/status/${user.employeeId}`,
+            `${BASE_URL}/api/users/status/${user.employeeId}`, // Updated URL
             { userstatus: "true" }, // ส่ง string "true" ตาม API เดิม
             { headers: { Authorization: `Bearer ${token}` } }
           );

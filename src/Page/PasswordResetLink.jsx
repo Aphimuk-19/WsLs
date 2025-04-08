@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { BASE_URL } from '../config/config'; // Add this import
 
 const PasswordResetLink = () => {
   const [email, setEmail] = useState("");
@@ -20,7 +21,7 @@ const PasswordResetLink = () => {
     setError("");
 
     try {
-      const response = await axios.post("http://172.18.43.37:3000/api/auth/forgot-password", {
+      const response = await axios.post(`${BASE_URL}/api/auth/forgot-password`, { // Updated URL
         email,
       });
 

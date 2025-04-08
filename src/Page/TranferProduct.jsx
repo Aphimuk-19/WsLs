@@ -3,6 +3,7 @@ import { LocationContext } from "../Context/LocationContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Modal } from "antd";
 import axios from "axios";
+import { BASE_URL } from '../config/config';
 
 const TransferProduct = () => {
   const {
@@ -47,14 +48,17 @@ const TransferProduct = () => {
   const fetchProductLocations = async (productId) => {
     try {
       const token = localStorage.getItem("authToken");
-      const response = await axios.get("http://172.18.43.37:3000/api/cell/cellsAll", {
+      if (!token) throw new Error("No authentication token found");
+
+      const response = await axios.get(`${BASE_URL}/api/cell/cellsAll`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       if (!response.data.success) throw new Error("Invalid API response");
 
       const locations = [];
       response.data.data.forEach((cell) => {
-        if (cell.products && cell.products.length > 0) {
+        if (cell.products?.length > 0) {
           cell.products.forEach((product) => {
             if (product.product?.productId === productId) {
               locations.push(`${cell.col}-${cell.row}`);
@@ -62,7 +66,7 @@ const TransferProduct = () => {
           });
         }
 
-        if (cell.subCellsknightA && cell.subCellsA.products && cell.subCellsA.products.length > 0) {
+        if (cell.subCellsA?.products?.length > 0) {
           cell.subCellsA.products.forEach((product) => {
             if (product.product?.productId === productId) {
               locations.push(`${cell.col}-${cell.row}-A`);
@@ -70,7 +74,7 @@ const TransferProduct = () => {
           });
         }
 
-        if (cell.subCellsB && cell.subCellsB.products && cell.subCellsB.products.length > 0) {
+        if (cell.subCellsB?.products?.length > 0) {
           cell.subCellsB.products.forEach((product) => {
             if (product.product?.productId === productId) {
               locations.push(`${cell.col}-${cell.row}-B`);
@@ -205,18 +209,10 @@ const TransferProduct = () => {
 
     try {
       const token = localStorage.getItem("authToken");
-      const userRole = localStorage.getItem("role");
 
       if (!token) {
         alert("กรุณาล็อกอินก่อนดำเนินการ");
         navigate("/login");
-        return;
-      }
-
-      // ตรวจสอบว่าเป็น admin หรือไม่ (ตามที่ backend ต้องการ)
-      if (userRole !== "admin") {
-        alert("คุณไม่มีสิทธิ์ในการย้ายสินค้า ต้องเป็นผู้ดูแลระบบเท่านั้น");
-        navigate("/Dashboard"); // หรือหน้าที่เหมาะสม
         return;
       }
 
@@ -253,7 +249,7 @@ const TransferProduct = () => {
       console.log("Payload sent to backend:", payload);
 
       const response = await axios.post(
-        "http://172.18.43.37:3000/api/manage/move-product",
+        `${BASE_URL}/api/manage/move-product`,
         payload,
         {
           headers: {
@@ -276,12 +272,8 @@ const TransferProduct = () => {
     } catch (error) {
       console.error("Failed to move products:", error.message);
       if (error.response?.status === 401) {
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("role");
-        localStorage.removeItem("firstName");
-        localStorage.removeItem("lastName");
-        localStorage.removeItem("email");
-        alert("เซสชันหมดอายุหรือคุณไม่มีสิทธิ์ กรุณาล็อกอินใหม่");
+        localStorage.clear();
+        alert("เซสชันหมดอายุ กรุณาล็อกอินใหม่");
         navigate("/login");
       } else {
         alert("เกิดข้อผิดพลาดในการย้ายสินค้า: " + (error.response?.data?.error || error.message));

@@ -3,6 +3,7 @@ import { LocationContext } from "../Context/LocationContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Modal, Spin, message } from "antd";
 import axios from "axios";
+import { BASE_URL } from '../config/config'; // Add this import
 
 const Addproduct = () => {
   const {
@@ -52,7 +53,7 @@ const Addproduct = () => {
       const token = localStorage.getItem("authToken");
       if (!token) throw new Error("กรุณาเข้าสู่ระบบ");
 
-      const response = await axios.get("http://172.18.43.37:3000/api/cell/cellsAll", {
+      const response = await axios.get(`${BASE_URL}/api/cell/cellsAll`, { // Updated URL
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -263,7 +264,7 @@ const Addproduct = () => {
       console.log("Payload sent to backend:", payload);
 
       const response = await axios.post(
-        "http://172.18.43.37:3000/api/manage/assign-products-from-bill",
+        `${BASE_URL}/api/manage/assign-products-from-bill`, // Updated URL
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -484,7 +485,7 @@ const Addproduct = () => {
                 </div>
               </div>
               <div className="flex justify-center w-full mt-4 relative">
-                <div className="w-[983px] mb-16"> {/* Added margin-bottom to prevent overlap with buttons */}
+                <div className="w-[983px] mb-16">
                   <table className="w-full">
                     <thead>
                       <tr className="bg-gray-200 border-b border-gray-300">
@@ -518,7 +519,6 @@ const Addproduct = () => {
                     </tbody>
                   </table>
                 </div>
-                {/* Fixed Buttons Below Table */}
                 <div className="absolute bottom-0 left-0 w-full flex justify-end p-4 bg-white mt-10">
                   <button
                     className={`w-[80px] h-[35px] rounded-[5px] border ${

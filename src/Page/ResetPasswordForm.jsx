@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import { BASE_URL } from '../config/config'; // Add this import
 
 const ResetPasswordForm = () => {
   const [formData, setFormData] = useState({
@@ -40,10 +41,6 @@ const ResetPasswordForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
-    // Remove the password length validation
-    // if (formData.password.length < 8) {
-    //   newErrors.password = ["รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร"];
-    // }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = ["รหัสผ่านไม่ตรงกัน"];
     }
@@ -63,7 +60,7 @@ const ResetPasswordForm = () => {
 
     try {
       const response = await axios.post(
-        "http://172.18.43.37:3000/api/auth/reset-password",
+        `${BASE_URL}/api/auth/reset-password`, // Updated to use BASE_URL
         {
           token,
           password: formData.password,
@@ -85,7 +82,6 @@ const ResetPasswordForm = () => {
     }
   };
 
-  // Update the isFormValid function to remove the password length check
   const isFormValid = () => {
     return (
       formData.password === formData.confirmPassword &&

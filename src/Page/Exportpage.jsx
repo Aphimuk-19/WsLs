@@ -1,13 +1,13 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "antd";
+import { BASE_URL } from '../config/config'; // Add this import
 
 function Exportpage() {
   const location = useLocation();
   const navigate = useNavigate();
   const selectedItems = location.state?.selectedItems || [];
   const billnumber = location.state?.billnumber || "N/A";
-  const BASE_URL = "http://172.18.43.37:3000"; // ปรับตาม URL ของ backend คุณ
 
   const handleGeneratePDF = async () => {
     const token = localStorage.getItem("authToken");
@@ -22,7 +22,7 @@ function Exportpage() {
     };
 
     try {
-      const response = await fetch(`${BASE_URL}/api/generate-pdf`, {
+      const response = await fetch(`${BASE_URL}/api/generate-pdf`, { // Updated URL
         method: "POST",
         headers: {
           "Content-Type": "application/json",

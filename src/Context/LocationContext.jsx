@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { BASE_URL } from '../config/config'; // Add this import
 
 export const LocationContext = createContext();
 
@@ -15,7 +16,7 @@ export const LocationProvider = ({ children }) => {
   // ฟังก์ชันดึงข้อมูลเซลล์ทั้งหมดจาก API
   const fetchCells = async () => {
     try {
-      const response = await fetch("http://172.18.43.37:3000/api/cell/cellsAll");
+      const response = await fetch(`${BASE_URL}/api/cell/cellsAll`); // Updated URL
       if (!response.ok) throw new Error(`API Error: ${response.status}`);
 
       const contentType = response.headers.get("content-type");
@@ -103,13 +104,13 @@ export const LocationProvider = ({ children }) => {
     const cellId = `${col}-${row}`;
 
     try {
-      const checkResponse = await fetch(`http://172.18.43.37:3000/api/cell/cellsAll?cellId=${cellId}`);
+      const checkResponse = await fetch(`${BASE_URL}/api/cell/cellsAll?cellId=${cellId}`); // Updated URL
       const checkData = await checkResponse.json();
       const cellExists = checkData.success && checkData.data.some((cell) => cell.cellId === cellId);
 
       if (cellExists) {
         const updatePayload = { cellId, subCellChoice: "both" };
-        const updateResponse = await fetch("http://172.18.43.37:3000/api/cell/edit-subcells", {
+        const updateResponse = await fetch(`${BASE_URL}/api/cell/edit-subcells`, { // Updated URL
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -132,7 +133,7 @@ export const LocationProvider = ({ children }) => {
           subCellsA: { status: 1 },
           subCellsB: { status: 1 },
         };
-        const response = await fetch("http://172.18.43.37:3000/api/cell/create/cells", {
+        const response = await fetch(`${BASE_URL}/api/cell/create/cells`, { // Updated URL
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -197,7 +198,7 @@ export const LocationProvider = ({ children }) => {
     const cellId = `${col}-${row}`;
 
     try {
-      const checkResponse = await fetch(`http://172.18.43.37:3000/api/cell/cellsAll?cellId=${cellId}`);
+      const checkResponse = await fetch(`${BASE_URL}/api/cell/cellsAll?cellId=${cellId}`); // Updated URL
       const checkData = await checkResponse.json();
       const cellExists = checkData.success && checkData.data.some((cell) => cell.cellId === cellId);
 
@@ -205,7 +206,7 @@ export const LocationProvider = ({ children }) => {
         await handleCellStatusChange(cellId, "enabled");
       } else {
         const payload = { cellId, col, row, status: 1 };
-        const response = await fetch("http://172.18.43.37:3000/api/cell/create/cells", {
+        const response = await fetch(`${BASE_URL}/api/cell/create/cells`, { // Updated URL
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -257,7 +258,7 @@ export const LocationProvider = ({ children }) => {
       newCellId = `${newCol}-${newRow}`;
 
       const payload = { cellId: newCellId, col: newCol, row: newRow, status: 0 };
-      const response = await fetch("http://172.18.43.37:3000/api/cell/create/cells", {
+      const response = await fetch(`${BASE_URL}/api/cell/create/cells`, { // Updated URL
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -322,7 +323,7 @@ export const LocationProvider = ({ children }) => {
         newStatus = 0;
         if (hasSubCells && (cellId.includes("-A") || cellId.includes("-B"))) {
           try {
-            const response = await fetch("http://172.18.43.37:3000/api/cell/update-status", {
+            const response = await fetch(`${BASE_URL}/api/cell/update-status`, { // Updated URL
               method: "PUT",
               headers: {
                 "Content-Type": "application/json",
@@ -391,7 +392,7 @@ export const LocationProvider = ({ children }) => {
     console.log(`Updating ${cellId} from ${currentStatus} to ${newStatus}`);
 
     try {
-      const response = await fetch("http://172.18.43.37:3000/api/cell/update-status", {
+      const response = await fetch(`${BASE_URL}/api/cell/update-status`, { // Updated URL
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -7,7 +7,8 @@ import {
   faBan,
   faCalendarAlt,
 } from "@fortawesome/free-solid-svg-icons";
-import { useNavigate } from "react-router-dom"; // For redirecting to login if unauthorized
+import { useNavigate } from "react-router-dom";
+import { BASE_URL } from '../config/config'; // Add this import
 
 const HeaderManageLocation = () => {
   const [summaryData, setSummaryData] = useState({
@@ -30,7 +31,7 @@ const HeaderManageLocation = () => {
     }
 
     try {
-      const response = await fetch("http://172.18.43.37:3000/api/cell/summary", {
+      const response = await fetch(`${BASE_URL}/api/cell/summary`, { // Updated URL
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`, // ส่ง token ใน header

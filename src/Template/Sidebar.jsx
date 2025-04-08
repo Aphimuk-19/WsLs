@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Dropdown, Space, Badge
-
-, Menu } from "antd";
+import { Dropdown, Space, Badge, Menu } from "antd";
+import { BASE_URL } from '../config/config';
 import {
   DownOutlined,
   SwapOutlined,
@@ -16,6 +15,7 @@ import {
 } from "@ant-design/icons";
 import { Layout } from "antd";
 import axios from 'axios';
+import Logo from '../Image/Logocircle.png'; // แก้ไขการ import รูปภาพ
 
 const { Header, Sider } = Layout;
 
@@ -33,19 +33,21 @@ const Sidebar = () => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [profilePicture, setProfilePicture] = useState("");
+  const [loading, setLoading] = useState(false); // เพิ่ม state สำหรับ loading
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ฟังก์ชันดึงข้อมูลโปรไฟล์ผู้ใช้
   const fetchUserProfile = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
-      console.log("No token found, redirecting to login");
       navigate("/Login");
       return;
     }
 
+    setLoading(true); // เริ่ม loading
     try {
-      const response = await axios.get('http://172.18.43.37:3000/api/users/profile/me', {
+      const response = await axios.get(`${BASE_URL}/api/users/profile/me`, { // แก้ไข URL
         headers: { Authorization: `Bearer ${token}` },
       });
       const userData = response.data.data;
@@ -60,21 +62,19 @@ const Sidebar = () => {
       localStorage.setItem("firstName", userData.firstName || "");
       localStorage.setItem("lastName", userData.lastName || "");
       localStorage.setItem("email", userData.email || "");
-
-      console.log("Fetched User Role:", userData.role);
-      console.log("Fetched FirstName:", userData.firstName);
-      console.log("Fetched LastName:", userData.lastName);
-      console.log("Fetched Email:", userData.email);
-      console.log("Fetched Profile Picture:", userData.profilePicture);
     } catch (error) {
-      console.error("Error fetching user profile:", error);
       if (error.response?.status === 401) {
         localStorage.removeItem("authToken");
         navigate("/Login");
+      } else {
+        console.error("เกิดข้อผิดพลาดในการดึงข้อมูลโปรไฟล์:", error.message);
       }
+    } finally {
+      setLoading(false); // สิ้นสุด loading
     }
   };
 
+  // ตั้งค่า page ปัจจุบัน
   useEffect(() => {
     const pathToPageMap = {
       "/Dashboard": "Dashboard",
@@ -88,20 +88,15 @@ const Sidebar = () => {
 
     const currentPath = location.pathname;
     const page = pathToPageMap[currentPath] || "Dashboard";
-
     setCurrentPage(page);
     setHeaderText(page);
-
-    console.log("Current Path:", currentPath);
-    console.log("Set Current Page:", page);
   }, [location.pathname]);
 
+  // ดึงข้อมูลโปรไฟล์เมื่อเริ่มต้น
   useEffect(() => {
     fetchUserProfile();
     window.addEventListener("storage", fetchUserProfile);
-    return () => {
-      window.removeEventListener("storage", fetchUserProfile);
-    };
+    return () => window.removeEventListener("storage", fetchUserProfile);
   }, []);
 
   const handleMenuClick = ({ key }) => {
@@ -124,7 +119,6 @@ const Sidebar = () => {
     setHeaderText("Dashboard");
     setCurrentPage("Dashboard");
     navigate("/Dashboard");
-    console.log("Logo clicked, navigating to Dashboard");
   };
 
   const getSelectedKey = () => {
@@ -137,12 +131,11 @@ const Sidebar = () => {
       "ManageUsers": "6",
       "Account": "7",
     };
-    const selectedKey = pageToKeyMap[currentPage];
-    console.log("Current Page:", currentPage, "Selected Key:", selectedKey);
-    return selectedKey || "1";
+    return pageToKeyMap[currentPage] || "1";
   };
 
-  const items = [
+  // ใช้ useMemo เพื่อเพิ่มประสิทธิภาพ
+  const items = useMemo(() => [
     !collapsed && {
       key: "Menu",
       label: <div style={{ padding: "0 16px", fontWeight: "bold", fontSize: "12px" }}>MENU</div>,
@@ -160,7 +153,7 @@ const Sidebar = () => {
       disabled: true,
     },
     { key: "7", label: "Accounts", icon: <UserOutlined /> },
-  ].filter(Boolean);
+  ].filter(Boolean), [collapsed, userRole]);
 
   const item = [
     {
@@ -168,21 +161,9 @@ const Sidebar = () => {
       label: (
         <div className="flex items-center justify-center flex-col">
           {profilePicture ? (
-            <img
-              src={profilePicture}
-              alt="Profile"
-              style={{
-                width: "44px",
-                height: "44px",
-                marginBottom: "8px",
-                borderRadius: "50%",
-                objectFit: "cover",
-              }}
-            />
+            <img src={profilePicture} alt="Profile" style={{ width: "44px", height: "44px", marginBottom: "8px", borderRadius: "50%", objectFit: "cover" }} />
           ) : (
-            <div
-              className="w-[44px] h-[44px] rounded-full bg-gray-400 flex items-center justify-center text-white font-bold mb-[8px]"
-            >
+            <div className="w-[44px] h-[44px] rounded-full bg-gray-400 flex items-center justify-center text-white font-bold mb-[8px]">
               {firstName.charAt(0)}
             </div>
           )}
@@ -210,11 +191,7 @@ const Sidebar = () => {
       label: "Logout",
       icon: <LogoutOutlined />,
       onClick: () => {
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("role");
-        localStorage.removeItem("firstName");
-        localStorage.removeItem("lastName");
-        localStorage.removeItem("email");
+        localStorage.clear();
         setProfilePicture("");
         navigate("/Login");
       },
@@ -224,7 +201,7 @@ const Sidebar = () => {
   const notificationMenu = (
     <Menu>
       {notifications.length === 0 ? (
-        <Menu.Item key="0">No new notifications</Menu.Item>
+        <Menu.Item key="0">ไม่มีแจ้งเตือนใหม่</Menu.Item>
       ) : (
         notifications.map((notification) => (
           <Menu.Item key={notification.key}>{notification.message}</Menu.Item>
@@ -241,28 +218,13 @@ const Sidebar = () => {
         onCollapse={(value) => setCollapsed(value)}
         width={237}
         collapsedWidth={90}
-        style={{
-          background: "#F1F2F7",
-          transition: "width 0.2s",
-        }}
+        style={{ background: "#F1F2F7", transition: "width 0.2s" }}
       >
         <div
-          style={{
-            padding: "16px",
-            color: "#000",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            border: "none",
-            cursor: "pointer",
-          }}
+          style={{ padding: "16px", color: "#000", fontWeight: "bold", display: "flex", alignItems: "center", border: "none", cursor: "pointer" }}
           onClick={handleLogoClick}
         >
-          <img
-            src="/src/Image/Logocircle.png"
-            alt="Logo"
-            style={{ width: 53, height: 53, marginRight: "8px" }}
-          />
+          <img src={Logo} alt="Logo" style={{ width: 53, height: 53, marginRight: "8px" }} />
           {!collapsed && (
             <span className="font-medium ml-[10px]">
               J.I.B. Computer <br /> Group
@@ -274,15 +236,10 @@ const Sidebar = () => {
           mode="inline"
           selectedKeys={[getSelectedKey()]}
           items={items}
-          style={{
-            background: "#F1F2F7",
-            marginTop: "14px",
-            border: "none",
-          }}
+          style={{ background: "#F1F2F7", marginTop: "14px", border: "none" }}
           onClick={handleMenuClick}
         />
       </Sider>
-
       <Layout>
         <Header
           style={{
@@ -299,37 +256,15 @@ const Sidebar = () => {
           }}
         >
           <div style={{ display: "flex", alignItems: "center" }}>
-            <span
-              className="text-lg font-medium tracking-wide"
-              style={{ marginLeft: "30px" }}
-            >
+            <span className="text-lg font-medium tracking-wide" style={{ marginLeft: "30px" }}>
               {headerText}
             </span>
           </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "15px",
-              marginRight: "30px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center", gap: "15px", marginRight: "30px" }}>
             {profilePicture ? (
-              <img
-                src={profilePicture}
-                alt="Profile"
-                style={{
-                  width: "50px",
-                  height: "50px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                }}
-              />
+              <img src={profilePicture} alt="Profile" style={{ width: "50px", height: "50px", borderRadius: "50%", objectFit: "cover" }} />
             ) : (
-              <div
-                className="w-[50px] h-[50px] rounded-full bg-gray-400 flex items-center justify-center text-white font-bold"
-              >
+              <div className="w-[50px] h-[50px] rounded-full bg-gray-400 flex items-center justify-center text-white font-bold">
                 {firstName.charAt(0)}
               </div>
             )}

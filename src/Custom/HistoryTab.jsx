@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button, Input, Space, Table, message, DatePicker } from "antd";
 import { SearchOutlined, FilterOutlined, CopyOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import dayjs from "dayjs"; // Use dayjs
-import "dayjs/locale/en"; // Import English locale for dayjs
-import locale from "antd/es/date-picker/locale/en_US"; // Ant Design English locale
+import dayjs from "dayjs";
+import "dayjs/locale/en";
+import locale from "antd/es/date-picker/locale/en_US";
+import { BASE_URL } from '../config/config'; // Add this import
 
 // Set dayjs to use English locale
 dayjs.locale("en");
@@ -15,11 +16,11 @@ const HistoryTab = () => {
   const [historyData, setHistoryData] = useState([]);
   const [historySearchValue, setHistorySearchValue] = useState("");
   const [filteredHistoryData, setFilteredHistoryData] = useState([]);
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false); // State to control DatePicker visibility
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const navigate = useNavigate();
-  const filterButtonRef = useRef(null); // Ref to the filter button
+  const filterButtonRef = useRef(null);
 
   useEffect(() => {
     const fetchHistoryData = async () => {
@@ -40,7 +41,7 @@ const HistoryTab = () => {
           return;
         }
 
-        const response = await fetch("http://172.18.43.37:3000/api/withdraw/exportpdfs", {
+        const response = await fetch(`${BASE_URL}/api/withdraw/exportpdfs`, { // Updated URL
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -143,7 +144,7 @@ const HistoryTab = () => {
   const handleDateChange = (date) => {
     setSelectedDate(date);
     applyFilters(historySearchValue, date);
-    setIsDatePickerOpen(false); // Close the DatePicker after selecting a date
+    setIsDatePickerOpen(false);
   };
 
   const applyFilters = (searchValue, date) => {
@@ -172,7 +173,7 @@ const HistoryTab = () => {
   };
 
   const handleHistoryFilterClick = () => {
-    setIsDatePickerOpen(true); // Open the DatePicker when the filter button is clicked
+    setIsDatePickerOpen(true);
   };
 
   const handleOpenPDF = (record) => {
@@ -181,8 +182,7 @@ const HistoryTab = () => {
       return;
     }
 
-    const baseUrl = "http://172.18.43.37:3000";
-    const fullPdfUrl = `${baseUrl}${record.pdfUrl}`;
+    const fullPdfUrl = `${BASE_URL}${record.pdfUrl}`; // Updated URL
     window.open(fullPdfUrl, "_blank");
     message.success(`กำลังเปิด PDF สำหรับใบเบิก ${record.requisitionNumber}`);
   };
@@ -243,11 +243,11 @@ const HistoryTab = () => {
           <DatePicker
             open={isDatePickerOpen}
             onChange={handleDateChange}
-            onOpenChange={(open) => setIsDatePickerOpen(open)} // Update state when DatePicker opens/closes
+            onOpenChange={(open) => setIsDatePickerOpen(open)}
             format="DD/MM/YYYY"
             locale={locale}
-            getPopupContainer={() => filterButtonRef.current} // Position the DatePicker relative to the button
-            style={{ position: "absolute", visibility: "hidden" }} // Hide the input field
+            getPopupContainer={() => filterButtonRef.current}
+            style={{ position: "absolute", visibility: "hidden" }}
           />
         </div>
       </Space>

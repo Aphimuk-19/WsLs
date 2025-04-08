@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Button, Input, Space, message } from "antd"; // เพิ่ม message จาก antd
+import { Button, Input, Space, message, Select } from "antd";
 import { SearchOutlined, FilterOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { BASE_URL } from '../config/config';
 
 const { Search } = Input;
+const { Option } = Select; // Fixed the syntax here
 
-// CustomInputNumber component (ไม่มีการเปลี่ยนแปลง)
+// CustomInputNumber component (unchanged)
 const CustomInputNumber = ({
   value = 0,
   onChange,
@@ -69,8 +71,10 @@ const RequisitionTab = () => {
   const [filteredRequisitionData, setFilteredRequisitionData] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [productTypes, setProductTypes] = useState([]);
+  const [selectedType, setSelectedType] = useState(null);
+  const [showTypeFilter, setShowTypeFilter] = useState(false);
   const navigate = useNavigate();
-  const BASE_URL = "http://172.18.43.37:3000";
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,17 +102,21 @@ const RequisitionTab = () => {
         const cells = Array.isArray(data.data) ? data.data : [];
         const formattedData = cells.flatMap((cell) => {
           const products = [];
+          const typesSet = new Set();
+
           if (
             cell.divisionType !== "dual" &&
             cell.products &&
             Array.isArray(cell.products)
           ) {
             cell.products.forEach((product) => {
+              const productType = product.product.type || "Unknown";
+              typesSet.add(productType);
               products.push({
                 key: `${cell.cellId}-${product.product.productId}`,
                 id: product.product.productId,
                 cellId: cell.cellId,
-                type: product.product.type || "Unknown",
+                type: productType,
                 name: product.product.name || "Unknown",
                 image: product.product.image?.startsWith("http")
                   ? product.product.image
@@ -124,11 +132,13 @@ const RequisitionTab = () => {
               Array.isArray(cell.subCellsA.products)
             ) {
               cell.subCellsA.products.forEach((product) => {
+                const productType = product.product.type || "Unknown";
+                typesSet.add(productType);
                 products.push({
                   key: `${cell.cellId}-A-${product.product.productId}`,
                   id: product.product.productId,
                   cellId: `${cell.cellId}-A`,
-                  type: product.product.type || "Unknown",
+                  type: productType,
                   name: product.product.name || "Unknown",
                   image: product.product.image?.startsWith("http")
                     ? product.product.image
@@ -143,11 +153,13 @@ const RequisitionTab = () => {
               Array.isArray(cell.subCellsB.products)
             ) {
               cell.subCellsB.products.forEach((product) => {
+                const productType = product.product.type || "Unknown";
+                typesSet.add(productType);
                 products.push({
                   key: `${cell.cellId}-B-${product.product.productId}`,
                   id: product.product.productId,
                   cellId: `${cell.cellId}-B`,
-                  type: product.product.type || "Unknown",
+                  type: productType,
                   name: product.product.name || "Unknown",
                   image: product.product.image?.startsWith("http")
                     ? product.product.image
@@ -157,6 +169,7 @@ const RequisitionTab = () => {
               });
             }
           }
+          setProductTypes(Array.from(typesSet));
           return products;
         });
 
@@ -208,19 +221,32 @@ const RequisitionTab = () => {
     setSearchTerm(value);
     const filtered = requisitionData.filter(
       (item) =>
-        item.id.toLowerCase().includes(value.toLowerCase()) ||
-        item.name.toLowerCase().includes(value.toLowerCase()) ||
-        item.type.toLowerCase().includes(value.toLowerCase())
+        (item.id.toLowerCase().includes(value.toLowerCase()) ||
+         item.name.toLowerCase().includes(value.toLowerCase()) ||
+         item.type.toLowerCase().includes(value.toLowerCase())) &&
+        (!selectedType || item.type === selectedType)
+    );
+    setFilteredRequisitionData(filtered);
+    setQuantities(filtered.map(() => 0));
+  };
+
+  const handleTypeFilter = (value) => {
+    setSelectedType(value);
+    const filtered = requisitionData.filter(
+      (item) =>
+        (item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.type.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (!value || item.type === value)
     );
     setFilteredRequisitionData(filtered);
     setQuantities(filtered.map(() => 0));
   };
 
   const handleFilterClick = () => {
-    console.log("Filter button clicked");
+    setShowTypeFilter((prev) => !prev);
   };
 
-  // แก้ไข handleConfirm เพื่อเพิ่ม message
   const handleConfirm = async () => {
     if (selectedItems.length === 0) return;
 
@@ -244,30 +270,26 @@ const RequisitionTab = () => {
         "Sending payload to /api/withdraw/withdraw:",
         JSON.stringify(payload)
       );
-      const response = await fetch(
-        "http://172.18.43.37:3000/api/withdraw/withdraw",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(`${BASE_URL}/api/withdraw/withdraw`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
       const result = await response.json();
       if (response.ok) {
         console.log("Withdraw successful:", result);
-        const pdfUrl = `http://172.18.43.37:3000${result.data.pdfUrl}`;
+        const pdfUrl = `${BASE_URL}${result.data.pdfUrl}`;
 
-        // สร้างข้อความแสดงรายการที่เบิก
         const withdrawnItemsMessage = selectedItems
           .map((item) => `${item.name} จำนวน ${item.requestedQuantity}`)
           .join(", ");
         message.success({
           content: `เบิกสินค้าสำเร็จ! รายการที่ตัดออก: ${withdrawnItemsMessage}`,
-          duration: 5, // แสดงนาน 5 วินาที
+          duration: 5,
         });
 
         setSelectedItems([]);
@@ -289,6 +311,10 @@ const RequisitionTab = () => {
   const handleCancel = () => {
     setSelectedItems([]);
     setQuantities(requisitionData.map(() => 0));
+    setSearchTerm("");
+    setSelectedType(null);
+    setFilteredRequisitionData(requisitionData);
+    setShowTypeFilter(false);
   };
 
   if (loading) return <div>Loading...</div>;
@@ -305,8 +331,23 @@ const RequisitionTab = () => {
           enterButton={<Button icon={<SearchOutlined />} />}
           onSearch={handleRequisitionSearch}
           onChange={(e) => handleRequisitionSearch(e.target.value)}
-          style={{ width: 1120 }}
+          style={{ width: showTypeFilter ? 900 : 1120 }}
         />
+        {showTypeFilter && (
+          <Select
+            placeholder="เลือกประเภทสินค้า"
+            style={{ width: 200 }}
+            onChange={handleTypeFilter}
+            value={selectedType}
+            allowClear
+          >
+            {productTypes.map((type) => (
+              <Option key={type} value={type}>
+                {type}
+              </Option>
+            ))}
+          </Select>
+        )}
         <Button
           icon={<FilterOutlined />}
           onClick={handleFilterClick}

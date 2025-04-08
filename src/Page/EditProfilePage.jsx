@@ -3,6 +3,7 @@ import { Camera } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { message } from 'antd';
+import { BASE_URL } from '../config/config'; // Add this import
 
 const EditProfilePage = () => {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const EditProfilePage = () => {
           navigate('/Login');
           return;
         }
-        const response = await axios.get('http://172.18.43.37:3000/api/users/profile/me', {
+        const response = await axios.get(`${BASE_URL}/api/users/profile/me`, { // Updated URL
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log('Current User Data:', response.data.data);
@@ -124,8 +125,8 @@ const EditProfilePage = () => {
       }
 
       const url = currentUser.role === 'admin' && userId
-        ? `http://172.18.43.37:3000/api/users/profile/${userId}`
-        : 'http://172.18.43.37:3000/api/users/profile/me';
+        ? `${BASE_URL}/api/users/profile/${userId}` // Updated URL
+        : `${BASE_URL}/api/users/profile/me`; // Updated URL
       console.log('Submitting to URL:', url);
       console.log('Form Data to Send:', Object.fromEntries(formDataToSend));
 

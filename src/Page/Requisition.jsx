@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { message } from "antd"; // เพิ่มการนำเข้า message จาก Ant Design
-import { useNavigate } from "react-router-dom"; // เพิ่ม useNavigate เพื่อการเปลี่ยนเส้นทาง
+import { message } from "antd";
+import { useNavigate } from "react-router-dom";
 import RequisitionTab from "../Custom/RequisitionTab";
 import HistoryTab from "../Custom/HistoryTab";
 import ProductEntryTab from "../Custom/ProductEntryTab";
+import { BASE_URL } from '../config/config'; // Add this import
 
 const Requisition = () => {
   const [activeTab, setActiveTab] = useState("requisition");
@@ -13,7 +14,7 @@ const Requisition = () => {
   const [filteredRequisitionData, setFilteredRequisitionData] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate(); // เพิ่มตัวแปร navigate
+  const navigate = useNavigate();
 
   // Fetch Requisition Data from API
   useEffect(() => {
@@ -30,7 +31,7 @@ const Requisition = () => {
           return;
         }
 
-        const response = await fetch("http://172.18.43.37:3000/api/cell/cellsAll", {
+        const response = await fetch(`${BASE_URL}/api/cell/cellsAll`, { // Updated URL
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -87,7 +88,7 @@ const Requisition = () => {
     };
 
     fetchData();
-  }, [navigate]); // เพิ่ม navigate เป็น dependency
+  }, [navigate]);
 
   return (
     <div className="flex flex-col items-center min-h-screen p-4">

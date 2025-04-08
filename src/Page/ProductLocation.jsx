@@ -4,6 +4,7 @@ import { PlusCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Spin, message } from "antd";
+import { BASE_URL } from '../config/config';
 
 const ProductLocation = () => {
   const {
@@ -38,7 +39,6 @@ const ProductLocation = () => {
     paddingWidth
   }rem`;
 
-  const BASE_URL = "http://172.18.43.37:3000";
   const DEFAULT_IMAGE_URL = "https://picsum.photos/40/40";
 
   useEffect(() => {
@@ -49,7 +49,6 @@ const ProductLocation = () => {
         !event.target.closest(".modal") &&
         !event.target.closest(".search-icon")
       ) {
-        console.log("handleClickOutside triggered", event.target);
         setSelectedCell(null);
         setProductsData([]);
       }
@@ -64,14 +63,12 @@ const ProductLocation = () => {
       const token = localStorage.getItem("authToken");
       if (!token) throw new Error("กรุณาเข้าสู่ระบบ");
 
-      const response = await axios.get(
-        "http://172.18.43.37:3000/api/cell/cellsAll",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      console.log("Fetching from:", `${BASE_URL}/api/cell/cellsAll`);
+      const response = await axios.get(`${BASE_URL}/api/cell/cellsAll`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      console.log("API Response from cellsAll:", response.data);
+      console.log("API Response:", response.data);
 
       if (!response.data.success) throw new Error("Invalid API response");
 
@@ -91,21 +88,17 @@ const ProductLocation = () => {
             name: product.product.name || "Unknown",
             image: imageUrl,
             location: location,
-            in: product.inDate
-              ? new Date(product.inDate).toISOString().split("T")[0]
+            in: product.product.inDate
+              ? new Date(product.product.inDate).toISOString().split("T")[0]
               : "N/A",
-            end: product.endDate
-              ? new Date(product.endDate).toISOString().split("T")[0]
+            end: product.product.endDate
+              ? new Date(product.product.endDate).toISOString().split("T")[0]
               : "N/A",
             quantity: product.quantity || 0,
           };
         };
 
-        if (
-          cell.cellId === cellId &&
-          cell.products &&
-          cell.products.length > 0
-        ) {
+        if (cell.cellId === cellId && cell.products && cell.products.length > 0) {
           cell.products.forEach((product) => {
             cellProducts.push(formatProduct(product, cell.cellId));
           });
@@ -160,12 +153,9 @@ const ProductLocation = () => {
       const token = localStorage.getItem("authToken");
       if (!token) throw new Error("กรุณาเข้าสู่ระบบ");
 
-      const response = await axios.get(
-        "http://172.18.43.37:3000/api/cell/cellsAll",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axios.get(`${BASE_URL}/api/cell/cellsAll`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       console.log("API Response for other locations:", response.data);
 
@@ -253,7 +243,7 @@ const ProductLocation = () => {
       if (!token) throw new Error("กรุณาเข้าสู่ระบบ");
 
       const response = await axios.get(
-        `http://172.18.43.37:3000/api/bill/billNumber/${billNumber}`,
+        `${BASE_URL}/api/bill/billNumber/${billNumber}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -284,11 +274,7 @@ const ProductLocation = () => {
       }, 1500);
     } catch (error) {
       setLoading(false);
-      console.error(
-        "Error validating bill number:",
-        error.message,
-        error.response?.data
-      );
+      console.error("Error validating bill number:", error.message, error.response?.data);
       if (error.response?.status === 401) {
         setError("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่");
         localStorage.removeItem("authToken");
@@ -327,65 +313,43 @@ const ProductLocation = () => {
 
   const getBackgroundColor = (status, isSelected, cellId = null) => {
     if (isSelected) return "bg-blue-500";
-    const isSubCell =
-      cellId && (cellId.includes("-A") || cellId.includes("-B"));
+    const isSubCell = cellId && (cellId.includes("-A") || cellId.includes("-B"));
     if (isSubCell) {
       switch (status) {
-        case 0:
-          return "bg-white";
-        case 1:
-          return "bg-[#0A8F08]";
-        case 2:
-          return "bg-red-500";
-        case 3:
-          return "bg-gray-500";
-        default:
-          return "bg-white";
+        case 0: return "bg-white";
+        case 1: return "bg-[#0A8F08]";
+        case 2: return "bg-red-500";
+        case 3: return "bg-gray-500";
+        default: return "bg-white";
       }
     }
     switch (status) {
-      case 0:
-        return "bg-white";
-      case 1:
-        return "bg-green-500";
-      case 2:
-        return "bg-red-500";
-      case 3:
-        return "bg-gray-500";
-      default:
-        return "bg-white";
+      case 0: return "bg-white";
+      case 1: return "bg-green-500";
+      case 2: return "bg-red-500";
+      case 3: return "bg-gray-500";
+      default: return "bg-white";
     }
   };
 
   const getTextColor = (status, isSelected, cellId = null) => {
     if (isSelected) return "text-white";
-    const isSubCell =
-      cellId && (cellId.includes("-A") || cellId.includes("-B"));
+    const isSubCell = cellId && (cellId.includes("-A") || cellId.includes("-B"));
     if (isSubCell) {
       switch (status) {
-        case 0:
-          return "text-black";
-        case 1:
-          return "text-white";
-        case 2:
-          return "text-white";
-        case 3:
-          return "text-white";
-        default:
-          return "text-black";
+        case 0: return "text-black";
+        case 1: return "text-white";
+        case 2: return "text-white";
+        case 3: return "text-white";
+        default: return "text-black";
       }
     }
     switch (status) {
-      case 0:
-        return "text-black";
-      case 1:
-        return "text-white";
-      case 2:
-        return "text-white";
-      case 3:
-        return "text-white";
-      default:
-        return "text-black";
+      case 0: return "text-black";
+      case 1: return "text-white";
+      case 2: return "text-white";
+      case 3: return "text-white";
+      default: return "text-black";
     }
   };
 
@@ -443,7 +407,6 @@ const ProductLocation = () => {
                 </button>
                 <button
                   type="submit"
-                  onClick={handleSubmit}
                   className="px-5 py-2 bg-[#006ec4] text-white rounded-lg hover:bg-[#006ec4] hover:brightness-110 font-medium transition-all"
                   disabled={loading}
                 >

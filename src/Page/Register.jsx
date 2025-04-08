@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Input, Select, message, Spin } from "antd";
 import { useNavigate } from "react-router-dom";
+import { BASE_URL } from '../config/config'; // Add this import
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -73,7 +74,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://172.18.43.37:3000/api/auth/Register", {
+      const response = await fetch(`${BASE_URL}/api/auth/Register`, { // Updated URL
         method: "POST",
         headers: {
           "Content-Type": "application/json",

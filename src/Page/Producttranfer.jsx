@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Input, Space } from "antd";
+import { Button, Input, Space, Select } from "antd";
 import { SearchOutlined, FilterOutlined } from "@ant-design/icons";
+import { BASE_URL } from '../config/config';
 const { Search } = Input;
+const { Option } = Select;
 
-const BASE_URL = "http://172.18.43.37:3000";
 const DEFAULT_IMAGE = "https://placehold.co/40x40?text=No+Image";
 
+// CustomInputNumber คงเดิม
 const CustomInputNumber = ({
   value = 0,
   onChange,
@@ -75,6 +77,9 @@ const ProductTransfer = () => {
   const [filteredRequisitionData, setFilteredRequisitionData] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [productTypes, setProductTypes] = useState([]);
+  const [selectedType, setSelectedType] = useState(null);
+  const [showTypeFilter, setShowTypeFilter] = useState(false); // เพิ่ม state ควบคุมการแสดง Select
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -84,14 +89,18 @@ const ProductTransfer = () => {
         const result = await response.json();
         if (result.success) {
           const products = [];
+          const typesSet = new Set();
+
           result.data.forEach((cell, cellIndex) => {
             if (cell.products && cell.products.length > 0) {
               cell.products.forEach((product, productIndex) => {
+                const productType = product.product?.type || "N/A";
+                typesSet.add(productType);
                 products.push({
                   key: `${cell.cellId}-main-${productIndex}`,
                   no: (products.length + 1).toString(),
                   id: product.product?.productId || "N/A",
-                  type: product.product?.type || "N/A",
+                  type: productType,
                   name: product.product?.name || "ไม่ระบุชื่อ",
                   image: product.product?.image
                     ? `${BASE_URL}${product.product.image}`
@@ -106,11 +115,13 @@ const ProductTransfer = () => {
 
             if (cell.subCellsA && cell.subCellsA.products && cell.subCellsA.products.length > 0) {
               cell.subCellsA.products.forEach((product, productIndex) => {
+                const productType = product.product?.type || "N/A";
+                typesSet.add(productType);
                 products.push({
                   key: `${cell.cellId}-subA-${productIndex}`,
                   no: (products.length + 1).toString(),
                   id: product.product?.productId || "N/A",
-                  type: product.product?.type || "N/A",
+                  type: productType,
                   name: product.product?.name || "ไม่ระบุชื่อ",
                   image: product.product?.image
                     ? `${BASE_URL}${product.product.image}`
@@ -125,11 +136,13 @@ const ProductTransfer = () => {
 
             if (cell.subCellsB && cell.subCellsB.products && cell.subCellsB.products.length > 0) {
               cell.subCellsB.products.forEach((product, productIndex) => {
+                const productType = product.product?.type || "N/A";
+                typesSet.add(productType);
                 products.push({
                   key: `${cell.cellId}-subB-${productIndex}`,
                   no: (products.length + 1).toString(),
                   id: product.product?.productId || "N/A",
-                  type: product.product?.type || "N/A",
+                  type: productType,
                   name: product.product?.name || "ไม่ระบุชื่อ",
                   image: product.product?.image
                     ? `${BASE_URL}${product.product.image}`
@@ -146,6 +159,7 @@ const ProductTransfer = () => {
           setRequisitionData(products);
           setFilteredRequisitionData(products);
           setQuantities(products.map(() => 0));
+          setProductTypes(Array.from(typesSet));
         } else {
           console.error("ไม่สามารถดึงข้อมูลได้:", result.error);
         }
@@ -182,29 +196,43 @@ const ProductTransfer = () => {
   };
 
   const handleDeleteItem = (itemKey) => {
-    console.log("Deleting item with key:", itemKey);
-    setSelectedItems((prev) => {
-      const updatedItems = prev.filter((item) => item.key !== itemKey);
-      console.log("After deletion, selectedItems:", updatedItems);
-      return updatedItems;
-    });
+    setSelectedItems((prev) => prev.filter((item) => item.key !== itemKey));
   };
 
   const handleRequisitionSearch = (value) => {
     setSearchTerm(value);
     const filtered = requisitionData.filter(
       (item) =>
-        item.id.toLowerCase().includes(value.toLowerCase()) ||
-        item.name.toLowerCase().includes(value.toLowerCase()) ||
-        item.type.toLowerCase().includes(value.toLowerCase())
+        (item.id.toLowerCase().includes(value.toLowerCase()) ||
+         item.name.toLowerCase().includes(value.toLowerCase()) ||
+         item.type.toLowerCase().includes(value.toLowerCase())) &&
+        (!selectedType || item.type === selectedType)
     );
     setFilteredRequisitionData(filtered);
-    const newQuantities = filtered.map((item, idx) => quantities[requisitionData.findIndex(i => i.key === item.key)] || 0);
+    const newQuantities = filtered.map((item, idx) => 
+      quantities[requisitionData.findIndex(i => i.key === item.key)] || 0
+    );
+    setQuantities(newQuantities);
+  };
+
+  const handleTypeFilter = (value) => {
+    setSelectedType(value);
+    const filtered = requisitionData.filter(
+      (item) =>
+        (item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         item.type.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (!value || item.type === value)
+    );
+    setFilteredRequisitionData(filtered);
+    const newQuantities = filtered.map((item) => 
+      quantities[requisitionData.findIndex(i => i.key === item.key)] || 0
+    );
     setQuantities(newQuantities);
   };
 
   const handleFilterClick = () => {
-    console.log("คลิกปุ่มตัวกรอง");
+    setShowTypeFilter((prev) => !prev); // สลับสถานะการแสดง Select
   };
 
   const handleConfirm = () => {
@@ -215,7 +243,10 @@ const ProductTransfer = () => {
   const handleCancel = () => {
     setSelectedItems([]);
     setQuantities(filteredRequisitionData.map(() => 0));
-    console.log("ยกเลิก");
+    setSearchTerm("");
+    setSelectedType(null);
+    setFilteredRequisitionData(requisitionData);
+    setShowTypeFilter(false); // ซ่อน Select เมื่อกดยกเลิก
   };
 
   const handleImageError = (e) => {
@@ -242,8 +273,23 @@ const ProductTransfer = () => {
           enterButton={<Button icon={<SearchOutlined />} />}
           onSearch={handleRequisitionSearch}
           onChange={(e) => handleRequisitionSearch(e.target.value)}
-          style={{ width: 1120 }}
+          style={{ width: showTypeFilter ? 900 : 1120 }} // ปรับความกว้างตามการแสดง Select
         />
+        {showTypeFilter && (
+          <Select
+            placeholder="เลือกประเภทสินค้า"
+            style={{ width: 200 }}
+            onChange={handleTypeFilter}
+            value={selectedType}
+            allowClear
+          >
+            {productTypes.map((type) => (
+              <Option key={type} value={type}>
+                {type}
+              </Option>
+            ))}
+          </Select>
+        )}
         <Button
           icon={<FilterOutlined />}
           onClick={handleFilterClick}
@@ -377,7 +423,7 @@ const ProductTransfer = () => {
                           type="link"
                           style={{ color: "#f5222d" }}
                           className="hover:text-red-700 p-0"
-                          onClick={() => handleDeleteItem(item.key)} // เปลี่ยนจาก item.id เป็น item.key
+                          onClick={() => handleDeleteItem(item.key)}
                         >
                           ลบ
                         </Button>

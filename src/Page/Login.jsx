@@ -4,6 +4,7 @@ import { Input, message, Spin } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { BASE_URL } from '../config/config';
 
 const Login = () => {
   const [employeeID, setEmployeeID] = useState("");
@@ -23,7 +24,7 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await axios.post("http://172.18.43.37:3000/api/auth/login", {
+      const response = await axios.post(`${BASE_URL}/api/auth/login`, {
         employeeId: employeeID,
         password,
       });

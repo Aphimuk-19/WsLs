@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { BASE_URL } from '../config/config'; // Add this import
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -57,7 +58,7 @@ const Dashboard = () => {
         throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
       }
 
-      const response = await fetch("http://172.18.43.37:3000/api/dashboard/latest-items", {
+      const response = await fetch(`${BASE_URL}/api/dashboard/latest-items`, { // Updated URL
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -95,7 +96,7 @@ const Dashboard = () => {
         throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
       }
 
-      const response = await fetch("http://172.18.43.37:3000/api/dashboard/daily-items", {
+      const response = await fetch(`${BASE_URL}/api/dashboard/daily-items`, { // Updated URL
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -127,7 +128,7 @@ const Dashboard = () => {
         throw new Error("ไม่พบ token กรุณาล็อกอินใหม่");
       }
 
-      const response = await fetch("http://172.18.43.37:3000/api/cell/summary", {
+      const response = await fetch(`${BASE_URL}/api/cell/summary`, { // Updated URL
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,

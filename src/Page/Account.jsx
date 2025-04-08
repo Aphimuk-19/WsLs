@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { BASE_URL } from '../config/config'; // Add this import
 
 const Account = () => {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ const Account = () => {
     phoneNumber: "",
     profilePicture: "",
     employeeId: "",
-    role: "", // เพิ่ม role ใน state เริ่มต้น
+    role: "",
   });
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +26,7 @@ const Account = () => {
     }
 
     try {
-      const response = await axios.get("http://172.18.43.37:3000/api/users/profile/me", {
+      const response = await axios.get(`${BASE_URL}/api/users/profile/me`, { // Updated URL
         headers: { Authorization: `Bearer ${token}` },
       });
       const userData = response.data.data;
@@ -38,7 +39,7 @@ const Account = () => {
         phoneNumber: userData.phoneNumber || "",
         profilePicture: userData.profilePicture || "",
         employeeId: userData.employeeId || "N/A",
-        role: userData.role || "", // เพิ่ม role
+        role: userData.role || "",
       });
 
       console.log("Fetched Profile Data:", userData);
@@ -67,12 +68,12 @@ const Account = () => {
           lastName: profile.lastName,
           department: profile.department,
           email: profile.email,
-          phoneNumber: profile.phoneNumber, // แก้จาก phone เป็น phoneNumber
+          phoneNumber: profile.phoneNumber,
           profilePicture: profile.profilePicture,
           employeeId: profile.employeeId,
           role: profile.role,
-        }
-      }
+        },
+      },
     });
   };
 
@@ -84,7 +85,9 @@ const Account = () => {
             Profile detail
           </h1>
         </div>
-        <div style={{ height: "1px", backgroundColor: "#dcdcdc", margin: "10px 0" }}></div>
+        <div
+          style={{ height: "1px", backgroundColor: "#dcdcdc", margin: "10px 0" }}
+        ></div>
 
         <div className="flex items-center space-x-4 mt-10 mb-10">
           <h1 className="text-black text-lg font-medium">Profile</h1>
@@ -106,7 +109,9 @@ const Account = () => {
                 {profile.firstName.charAt(0)}
               </div>
             )}
-            <p>{profile.firstName} {profile.lastName}</p>
+            <p>
+              {profile.firstName} {profile.lastName}
+            </p>
           </div>
           <div>
             <button onClick={handleEditProfile} className="text-[#1565f9]">
@@ -115,22 +120,50 @@ const Account = () => {
           </div>
         </div>
 
-        <div style={{ width: "1013px", height: "1px", backgroundColor: "#dcdcdc", margin: "10px auto" }}></div>
+        <div
+          style={{
+            width: "1013px",
+            height: "1px",
+            backgroundColor: "#dcdcdc",
+            margin: "10px auto",
+          }}
+        ></div>
         <div className="flex items-center justify-between w-full mt-10 mb-10">
           <h1 className="text-black text-lg font-medium">Employee ID</h1>
           <p className="text-black mx-auto">{profile.employeeId}</p>
         </div>
-        <div style={{ width: "1013px", height: "1px", backgroundColor: "#dcdcdc", margin: "10px auto" }}></div>
+        <div
+          style={{
+            width: "1013px",
+            height: "1px",
+            backgroundColor: "#dcdcdc",
+            margin: "10px auto",
+          }}
+        ></div>
         <div className="flex items-center justify-between w-full mt-10 mb-10">
           <h1 className="text-black text-lg font-medium">Department</h1>
           <p className="text-black mx-auto">{profile.department || "N/A"}</p>
         </div>
-        <div style={{ width: "1013px", height: "1px", backgroundColor: "#dcdcdc", margin: "10px auto" }}></div>
+        <div
+          style={{
+            width: "1013px",
+            height: "1px",
+            backgroundColor: "#dcdcdc",
+            margin: "10px auto",
+          }}
+        ></div>
         <div className="flex items-center justify-between w-full mt-10 mb-10">
           <h1 className="text-black text-lg font-medium">Email</h1>
           <p className="text-black mx-auto">{profile.email || "N/A"}</p>
         </div>
-        <div style={{ width: "1013px", height: "1px", backgroundColor: "#dcdcdc", margin: "10px auto" }}></div>
+        <div
+          style={{
+            width: "1013px",
+            height: "1px",
+            backgroundColor: "#dcdcdc",
+            margin: "10px auto",
+          }}
+        ></div>
         <div className="flex items-center justify-between w-full mt-10 mb-10">
           <h1 className="text-black text-lg font-medium">Phone Number</h1>
           <p className="text-black mx-auto">{profile.phoneNumber || "N/A"}</p>
