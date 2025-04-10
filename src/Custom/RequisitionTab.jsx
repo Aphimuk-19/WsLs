@@ -5,9 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { BASE_URL } from '../config/config';
 
 const { Search } = Input;
-const { Option } = Select; // Fixed the syntax here
+const { Option } = Select;
 
-// CustomInputNumber component (unchanged)
 const CustomInputNumber = ({
   value = 0,
   onChange,
@@ -100,9 +99,10 @@ const RequisitionTab = () => {
           );
 
         const cells = Array.isArray(data.data) ? data.data : [];
+        console.log("API Response Data:", cells);
+
         const formattedData = cells.flatMap((cell) => {
           const products = [];
-          const typesSet = new Set();
 
           if (
             cell.divisionType !== "dual" &&
@@ -110,8 +110,7 @@ const RequisitionTab = () => {
             Array.isArray(cell.products)
           ) {
             cell.products.forEach((product) => {
-              const productType = product.product.type || "Unknown";
-              typesSet.add(productType);
+              const productType = product.product?.type || "Unknown";
               products.push({
                 key: `${cell.cellId}-${product.product.productId}`,
                 id: product.product.productId,
@@ -132,8 +131,7 @@ const RequisitionTab = () => {
               Array.isArray(cell.subCellsA.products)
             ) {
               cell.subCellsA.products.forEach((product) => {
-                const productType = product.product.type || "Unknown";
-                typesSet.add(productType);
+                const productType = product.product?.type || "Unknown";
                 products.push({
                   key: `${cell.cellId}-A-${product.product.productId}`,
                   id: product.product.productId,
@@ -153,8 +151,7 @@ const RequisitionTab = () => {
               Array.isArray(cell.subCellsB.products)
             ) {
               cell.subCellsB.products.forEach((product) => {
-                const productType = product.product.type || "Unknown";
-                typesSet.add(productType);
+                const productType = product.product?.type || "Unknown";
                 products.push({
                   key: `${cell.cellId}-B-${product.product.productId}`,
                   id: product.product.productId,
@@ -169,10 +166,17 @@ const RequisitionTab = () => {
               });
             }
           }
-          setProductTypes(Array.from(typesSet));
           return products;
         });
 
+        // คำนวณ productTypes จาก formattedData
+        const allTypes = [
+          ...new Set(formattedData.map((item) => item.type || "Unknown")),
+        ];
+        console.log("Calculated Product Types:", allTypes);
+        setProductTypes(allTypes);
+
+        console.log("Formatted Data:", formattedData);
         setRequisitionData(formattedData);
         setFilteredRequisitionData(formattedData);
         setQuantities(formattedData.map(() => 0));
@@ -392,7 +396,7 @@ const RequisitionTab = () => {
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-10 h-10 object-contain mx-auto" 
+                      className="w-10 h-10 object-contain mx-auto"
                     />
                   </td>
                   <td className="p-2 text-sm text-center">{item.name}</td>

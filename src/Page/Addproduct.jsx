@@ -513,7 +513,7 @@ const Addproduct = () => {
                           </td>
                           <td className="p-2 text-sm text-center relative">
                             {storedProducts[product.productId]?.cellId || "ยังไม่ได้เลือก"}
-                          </td>
+                          </td>  
                         </tr>
                       ))}
                     </tbody>
